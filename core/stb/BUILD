@@ -1,0 +1,11 @@
+cc_library(
+    name="stb",
+    srcs=[
+        "stb_impl.cpp"
+    ],
+    hdrs=[
+        "stb_image.h",
+        "stb_image_write.h"
+    ],
+    visibility=["//visibility:public"]
+)

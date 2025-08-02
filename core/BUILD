@@ -1,0 +1,22 @@
+cc_library(
+    name="mat",
+    srcs=[
+        "mat.cpp",
+    ],
+    hdrs=[
+        "mat.hpp",
+    ],
+    deps=[
+        "//stb:stb",
+    ],
+)
+
+cc_binary(
+    name="load",
+    srcs=[
+        "load.cpp",
+    ],
+    deps=[
+        ":mat"
+    ]
+)
