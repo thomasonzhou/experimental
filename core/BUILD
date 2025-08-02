@@ -7,7 +7,7 @@ cc_library(
         "mat.hpp",
     ],
     deps=[
-        "//stb:stb",
+        "//core/stb:stb",
     ],
 )
 
