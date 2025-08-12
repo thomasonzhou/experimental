@@ -3,14 +3,22 @@
 #include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("Mat class") {
-  core::Mat mat(100, 100, 3, 255);
-  REQUIRE(mat.batch_size() == 1);
-  REQUIRE(mat.width() == 100);
-  REQUIRE(mat.height() == 100);
-  REQUIRE(mat.channels() == 3);
-  REQUIRE(mat.size() == 30000);  // 100 * 100 * 3
+  constexpr int kHeight = 10;
+  constexpr int kWidth = 10;
+  constexpr int kChannels = 3;
+  constexpr int a = 1;
+  constexpr int b = 2;
+  constexpr int c = 3;
+  constexpr int d = 4;
 
-  REQUIRE(mat(0, 0, 0, 0) == 255);
+  core::Mat mat(kWidth, kHeight, kChannels, 0);
+  REQUIRE(mat.batch_size() == 1);
+  REQUIRE(mat.width() == kWidth);
+  REQUIRE(mat.height() == kHeight);
+  REQUIRE(mat.channels() == kChannels);
+  REQUIRE(mat.size() == 1 * kWidth * kHeight * kChannels);
+
+  REQUIRE(mat(0, 0, 0, 0) == 0);
   mat(0, 0, 0, 0) = 128;
   REQUIRE(mat(0, 0, 0, 0) == 128);
 }

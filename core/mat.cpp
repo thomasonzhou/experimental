@@ -7,7 +7,7 @@
 namespace core {
 static constexpr int KEEP_CHANNELS = 0;  // retain all channels from source
 
-Mat::Mat(const std::string filename) : img_ptr(nullptr, stbi_image_free) {
+Mat::Mat(const std::string& filename) : img_ptr(nullptr, stbi_image_free) {
   if (filename.empty()) {
     std::cerr << "Error: No filename provided" << std::endl;
     exit(1);
@@ -51,6 +51,14 @@ Mat::Mat(const int batch, const int height, const int width, const int channels,
   std::fill(data, data + total_size, value);
 
   img_ptr.reset(data);
+}
+
+Mat imread(const std::string& filename) {
+  Mat img(filename);
+  if (!img.data()) {
+    throw std::runtime_error("Failed to read image");
+  }
+  return img;
 }
 
 };  // namespace core

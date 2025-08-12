@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <stdexcept>
 #include <string>
 
 #include "stb/stb_image.h"
@@ -9,7 +10,7 @@
 namespace core {
 class Mat {
  public:
-  Mat(const std::string filename);
+  Mat(const std::string& filename);
 
   Mat(const int height, const int width, const int channels,
       const unsigned char value);
@@ -25,6 +26,7 @@ class Mat {
            col * channels_ + channel;
   }
 
+  // accessors for pixel values
   unsigned char& operator()(int batch, int row, int col, int channel) {
     return img_ptr.get()[calculate_index(batch, row, col, channel)];
   }
@@ -33,6 +35,20 @@ class Mat {
     return img_ptr.get()[calculate_index(batch, row, col, channel)];
   }
 
+  unsigned char& operator()(int row, int col, int channel) {
+    if (batch_size_ != 1) {
+      throw std::out_of_range("Mat is not a single image, use batch index.");
+    }
+    return img_ptr.get()[calculate_index(0, row, col, channel)];
+  }
+  const unsigned char& operator()(int row, int col, int channel) const {
+    if (batch_size_ != 1) {
+      throw std::out_of_range("Mat is not a single image, use batch index.");
+    }
+    return img_ptr.get()[calculate_index(0, row, col, channel)];
+  }
+
+  // Equality operator to compare two Mat objects
   const bool operator==(const Mat& other) const {
     if (batch_size_ != other.batch_size_ || height_ != other.height_ ||
         width_ != other.width_ || channels_ != other.channels_) {
@@ -62,4 +78,7 @@ class Mat {
   std::unique_ptr<unsigned char, decltype(&stbi_image_free)> img_ptr;
   int batch_size_, height_, width_, channels_;
 };
+
+Mat imread(const std::string& filename);
+
 };  // namespace core
