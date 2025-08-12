@@ -52,7 +52,7 @@ class Mat {
     return img_ptr.get()[calculate_index(row, col, 0)];
   }
 
-  // equality
+  // operators
   const bool operator==(const Mat& other) const {
     if (height_ != other.height_ || width_ != other.width_ ||
         channels_ != other.channels_) {
@@ -72,6 +72,55 @@ class Mat {
 
   const bool operator!=(const Mat& other) const { return !(*this == other); }
 
+  const Mat operator+(const unsigned char value) const {
+    Mat result(height_, width_, channels_, 0);
+    for (int h = 0; h < height_; ++h) {
+      for (int w = 0; w < width_; ++w) {
+        for (int c = 0; c < channels_; ++c) {
+          result(h, w, c) = this->operator()(h, w, c) + value;
+        }
+      }
+    }
+    return result;
+  }
+
+  const Mat operator+(const Mat& other) const {
+    if (height_ != other.height_ || width_ != other.width_ ||
+        channels_ != other.channels_) {
+      throw std::runtime_error("Incompatible matrix dimensions");
+    }
+    Mat result(height_, width_, channels_, 0);
+    for (int h = 0; h < height_; ++h) {
+      for (int w = 0; w < width_; ++w) {
+        for (int c = 0; c < channels_; ++c) {
+          result(h, w, c) = this->operator()(h, w, c) + other(h, w, c);
+        }
+      }
+    }
+    return result;
+  }
+
+  const Mat operator*(const double scalar) const {
+    Mat result(height_, width_, channels_, 0);
+    for (int h = 0; h < height_; ++h) {
+      for (int w = 0; w < width_; ++w) {
+        for (int c = 0; c < channels_; ++c) {
+          result(h, w, c) =
+              static_cast<unsigned char>(this->operator()(h, w, c) * scalar);
+        }
+      }
+    }
+    return result;
+  }
+
+  const Mat operator-(const Mat& other) const {
+    if (height_ != other.height_ || width_ != other.width_ ||
+        channels_ != other.channels_) {
+      throw std::runtime_error("Incompatible matrix dimensions");
+    }
+    return *this + (other * -1.0);
+  }
+
   int width() const { return width_; }
   int height() const { return height_; }
   int channels() const { return channels_; }
@@ -82,6 +131,22 @@ class Mat {
   int height_, width_, channels_;
 };
 
-Mat imread(const std::string& filename);
+static inline Mat imread(const std::string& filename);
+
+static inline Mat ones(const int height, const int width, const int channels) {
+  Mat mat(height, width, channels, 1);
+  return mat;
+}
+static inline Mat ones(const int height, const int width) {
+  return ones(height, width, 1);
+}
+
+static inline Mat zeros(const int height, const int width, const int channels) {
+  Mat mat(height, width, channels, 0);
+  return mat;
+}
+static inline Mat zeros(const int height, const int width) {
+  return zeros(height, width, 1);
+}
 
 };  // namespace core

@@ -1,16 +1,13 @@
 #include "core/mat.hpp"
 
+#include <array>
 #include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("Mat class") {
   constexpr int kHeight = 10;
   constexpr int kWidth = 10;
   constexpr int kChannels = 1;
-  constexpr int a = 1;
-  constexpr int b = 2;
-  constexpr int c = 3;
-  constexpr int d = 4;
-  constexpr int e = 5;
+  constexpr std::array<unsigned char, 4> values = {0, 1, 2, 3};
 
   core::Mat mat1(kWidth, kHeight, kChannels, 0);
   REQUIRE(mat1.width() == kWidth);
@@ -18,20 +15,26 @@ TEST_CASE("Mat class") {
   REQUIRE(mat1.channels() == kChannels);
   REQUIRE(mat1.size() == 1 * kWidth * kHeight * kChannels);
 
-  mat1(0, 0) = a;
-  REQUIRE(mat1(0, 0) == a);
-  mat1(0, 1) = b;
-  REQUIRE(mat1(0, 1) == b);
-  mat1(1, 0) = c;
-  REQUIRE(mat1(1, 0) == c);
-  mat1(1, 1) = d;
-  REQUIRE(mat1(1, 1) == d);
+  for (size_t i = 0; i < values.size(); ++i) {
+    mat1(0, 0, i) = values[i];
+    REQUIRE(mat1(0, 0, i) == values[i]);
+  }
 
   core::Mat mat2 = mat1.clone();
 
   REQUIRE(mat1 == mat2);
 
-  mat2(0, 0) = e;
-  REQUIRE(mat2(0, 0) == e);
+  constexpr int kNewValue = 5;
+  REQUIRE(mat1(0, 0, 0) != kNewValue);
+  mat2(0, 0) = kNewValue;
+  REQUIRE(mat2(0, 0) == kNewValue);
+  REQUIRE(mat1(0, 0) != kNewValue);
   REQUIRE(mat1 != mat2);
+
+  REQUIRE(mat1 + mat2 == mat2 + mat1);
+
+  core::Mat mat3 = mat2.clone() + 1;
+
+  REQUIRE(mat3 != mat2);
+  REQUIRE((mat1 + mat2) + mat3 == mat1 + (mat2 + mat3));
 }

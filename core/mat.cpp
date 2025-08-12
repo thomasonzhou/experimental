@@ -47,7 +47,7 @@ Mat::Mat(const int height, const int width, const int channels,
   img_ptr.reset(data);
 }
 
-Mat imread(const std::string& filename) {
+static inline Mat imread(const std::string& filename) {
   Mat img(filename);
   if (!img.data()) {
     throw std::runtime_error("Failed to read image");
