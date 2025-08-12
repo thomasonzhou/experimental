@@ -1,4 +1,5 @@
 bazel-bin
 bazel-core
+bazel-experimental
 bazel-out
 bazel-testlogs

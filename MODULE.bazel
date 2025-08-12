@@ -4,3 +4,5 @@
 #
 # For more details, please check https://github.com/bazelbuild/bazel/issues/18958
 ###############################################################################
+
+bazel_dep(name = "gflags", version = "2.2.2")

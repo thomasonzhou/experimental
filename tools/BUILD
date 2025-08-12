@@ -1,0 +1,10 @@
+cc_binary(
+    name="load",
+    srcs=[
+        "load.cpp",
+    ],
+    deps=[
+        "//core:mat",
+        "@gflags//:gflags"
+    ]
+)

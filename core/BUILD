@@ -9,14 +9,5 @@ cc_library(
     deps=[
         "//core/stb:stb",
     ],
-)
-
-cc_binary(
-    name="load",
-    srcs=[
-        "load.cpp",
-    ],
-    deps=[
-        ":mat"
-    ]
+    visibility=["//visibility:public"],
 )
