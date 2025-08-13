@@ -5,8 +5,6 @@
 
 #include "core/mat.hpp"
 #include "core/mat.pb.h"
-#include "stb/stb_image.h"
-#include "stb/stb_image_write.h"
 
 namespace core {
 [[nodiscard]] ::core::v1::Mat to_proto(const Mat &mat) noexcept;

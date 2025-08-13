@@ -1,5 +1,8 @@
 #include "core/mat_io.hpp"
 
+#include "stb/stb_image.h"
+#include "stb/stb_image_write.h"
+
 namespace core {
 
 ::core::v1::Mat to_proto(const Mat &mat) noexcept {
