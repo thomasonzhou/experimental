@@ -6,11 +6,23 @@ cc_library(
     hdrs=[
         "mat.hpp",
     ],
-    deps=[
+    visibility=["//visibility:public"],
+)
+
+cc_library(
+    name = "mat_io",
+    srcs = [
+        "mat_io.cpp",
+    ],
+    hdrs = [
+        "mat_io.hpp",
+    ],
+    deps = [
         "//core/stb:stb",
+        ":mat",
         ":mat_cc_proto",
     ],
-    visibility=["//visibility:public"],
+    visibility = ["//visibility:public"],
 )
 
 proto_library(

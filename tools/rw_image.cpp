@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 
-#include "core/mat.hpp"
+#include "core/mat_io.hpp"
 
 DEFINE_string(image_in_path, "", "Path to the input image file");
 DEFINE_string(image_out_path, "", "Path to save the output image file");
@@ -21,7 +21,14 @@ int main(int argc, char* argv[]) {
 
   core::Mat mat;
   if (!FLAGS_image_in_path.empty()) {
-    mat = core::imread(FLAGS_image_in_path);
+    auto result = core::imread(FLAGS_image_in_path);
+    if (result.has_value()) {
+      mat = result.value();
+    } else {
+      std::cerr << "Failed to read image from " << FLAGS_image_in_path
+                << std::endl;
+      return 1;
+    }
   } else {
     mat = core::zeros(5, 5, 4);
   }
@@ -34,7 +41,12 @@ int main(int argc, char* argv[]) {
   mat(2, 2, 3) = 1.0f;
 
   if (!FLAGS_image_out_path.empty()) {
-    core::imwrite(FLAGS_image_out_path, mat);
+    auto result = core::imwrite(FLAGS_image_out_path, mat);
+    if (!result) {
+      std::cerr << "Failed to write image to " << FLAGS_image_out_path
+                << std::endl;
+      return 1;
+    }
   }
 
   return 0;

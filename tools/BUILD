@@ -4,7 +4,7 @@ cc_binary(
         "rw_image.cpp",
     ],
     deps=[
-        "//core:mat",
+        "//core:mat_io",
         "@gflags//:gflags"
     ]
 )

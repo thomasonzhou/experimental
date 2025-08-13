@@ -5,48 +5,110 @@
 #include <string>
 
 namespace core {
-static constexpr int KEEP_CHANNELS = 0;  // retain all channels from source
 
 Mat::Mat() noexcept : data_ptr_(nullptr), rows_(0), cols_(0), channels_(0) {};
 
-Mat Mat::from_file(const std::string& filename) {
-  if (filename.empty()) {
-    std::cerr << "Error: No filename provided" << std::endl;
-    exit(1);
-  }
-
-  int rows, cols, channels;
-  unsigned char* img_data =
-      stbi_load(filename.c_str(), &cols, &rows, &channels, KEEP_CHANNELS);
-
-  if (!img_data) {
-    std::cerr << "Error: Failed to load image " << filename << std::endl;
-    exit(1);
-  }
-
-  Mat mat(rows, cols, channels, 0.0f);
-
-  for (size_t i = 0; i < mat.size(); ++i) {
-    mat.data_ptr_[i] = static_cast<float>(img_data[i]) / 255.0f;
-  }
-
-  stbi_image_free(img_data);
-  return mat;
-}
-
-Mat::Mat(const int rows, const int cols, const int channels, const float value)
-    : data_ptr_(std::make_unique<float[]>(static_cast<size_t>(rows) * cols *
-                                          channels)),
+Mat::Mat(const size_t rows, const size_t cols, const size_t channels,
+         const std::optional<float> value) noexcept
+    : data_ptr_(std::make_unique<float[]>(rows * cols * channels)),
       rows_(rows),
       cols_(cols),
       channels_(channels) {
-  if (rows <= 0 || cols <= 0 || channels <= 0) {
-    std::cerr << "Error: Invalid dimensions or channels" << std::endl;
-    exit(1);
+  if (value) {
+    std::fill(data_ptr_.get(), data_ptr_.get() + size(), *value);
+  }
+}
+
+Mat::Mat(const Mat& other)
+    : data_ptr_(std::make_unique<float[]>(other.size())),
+      rows_(other.rows_),
+      cols_(other.cols_),
+      channels_(other.channels_) {
+  std::copy(other.data(), other.data() + size(), data());
+}
+
+Mat& Mat::operator=(const Mat& other) {
+  if (this != &other) {
+    rows_ = other.rows_;
+    cols_ = other.cols_;
+    channels_ = other.channels_;
+    data_ptr_ = std::make_unique<float[]>(other.size());
+    std::copy(other.data(), other.data() + size(), data());
+  }
+  return *this;
+}
+
+Mat Mat::clone() const noexcept {
+  Mat copy(rows_, cols_, channels_);
+  std::copy(data(), data() + size(), copy.data());
+  return copy;
+}
+
+bool Mat::operator==(const Mat& other) const {
+  if (rows_ != other.rows_ || cols_ != other.cols_ ||
+      channels_ != other.channels_) {
+    return false;
   }
 
-  size_t total_size = static_cast<size_t>(rows) * cols * channels;
-  std::fill(data_ptr_.get(), data_ptr_.get() + total_size, value);
+  for (size_t i = 0; i < size(); ++i) {
+    if (data()[i] != other.data()[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// why support these?
+Mat Mat::operator+(const Mat& other) const noexcept {
+  Mat result(rows_, cols_, channels_);
+  for (size_t i = 0; i < size(); ++i) {
+    result.data()[i] = data()[i] + other.data()[i];
+  }
+  return result;
+}
+
+Mat Mat::operator-(const Mat& other) const noexcept {
+  Mat result(rows_, cols_, channels_);
+  for (size_t i = 0; i < size(); ++i) {
+    result.data()[i] = data()[i] - other.data()[i];
+  }
+  return result;
+}
+
+Mat Mat::operator*(const float scalar) const noexcept {
+  Mat result(rows_, cols_, channels_);
+  for (size_t i = 0; i < size(); ++i) {
+    result.data()[i] = data()[i] * scalar;
+  }
+  return result;
+}
+
+Mat Mat::operator/(const float scalar) const noexcept {
+  Mat result(rows_, cols_, channels_);
+  for (size_t i = 0; i < size(); ++i) {
+    result.data()[i] = data()[i] / scalar;
+  }
+  return result;
+}
+
+Mat Mat::operator+(const float scalar) const noexcept {
+  Mat result(rows_, cols_, channels_);
+  for (size_t i = 0; i < size(); ++i) {
+    result.data()[i] = data()[i] + scalar;
+  }
+  return result;
+}
+
+Mat Mat::operator-(const float scalar) const noexcept {
+  Mat result(rows_, cols_, channels_);
+  for (size_t i = 0; i < size(); ++i) {
+    result.data()[i] = data()[i] - scalar;
+  }
+  return result;
+}
+
+Mat operator*(const float scalar, const Mat& mat) noexcept {
+  return mat * scalar;
 }
 
 };  // namespace core

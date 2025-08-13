@@ -2,9 +2,17 @@ edition = "2023";
 
 package core.v1;
 
+enum MatLayout {
+  MAT_LAYOUT_UNSPECIFIED = 0;
+  MAT_LAYOUT_HWC = 1;
+  MAT_LAYOUT_CHW = 2;
+}
+
 message Mat {
   bytes data = 1;
-  int32 rows = 2;
-  int32 cols = 3;
-  int32 channels = 4;
+  uint32 rows = 2;
+  uint32 cols = 3;
+  uint32 channels = 4;
+
+  MatLayout layout = 5;
 }
