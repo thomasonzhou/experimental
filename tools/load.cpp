@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  core::Mat mat(FLAGS_image_path);
+  core::Mat mat = core::imread(FLAGS_image_path);
 
   return 0;
 }

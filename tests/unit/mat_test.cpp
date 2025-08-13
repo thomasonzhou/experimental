@@ -1,54 +1,110 @@
 #include "core/mat.hpp"
 
-#include <array>
 #include <catch2/catch_test_macros.hpp>
 
-TEST_CASE("Mat class") {
-  constexpr int kHeight = 3;
-  constexpr int kWidth = 5;
-  constexpr int kChannels = 1;
-  constexpr std::array<float, 4> values = {0.0f, 1.0f, 2.0f, 3.0f};
+TEST_CASE("Mat construction and basic properties", "[mat]") {
+  core::Mat mat(3, 5, 2, 1.5f);
+  REQUIRE(mat.height() == 3);
+  REQUIRE(mat.width() == 5);
+  REQUIRE(mat.channels() == 2);
+  REQUIRE(mat.size() == 30);  // 3 * 5 * 2 = 30
+  REQUIRE(mat(0, 0, 0) == 1.5f);
+  REQUIRE(mat(2, 4, 1) == 1.5f);
 
-  core::Mat mat1(kHeight, kWidth, kChannels, 0.0f);
-  REQUIRE(mat1.width() == kWidth);
-  REQUIRE(mat1.height() == kHeight);
-  REQUIRE(mat1.channels() == kChannels);
-  REQUIRE(mat1.size() == 1 * kWidth * kHeight * kChannels);
+  core::Mat tiny(1, 1, 1, 42.0f);
+  REQUIRE(tiny.size() == 1);
+  REQUIRE(tiny(0, 0) == 42.0f);
+}
 
-  for (size_t i = 0; i < values.size(); ++i) {
-    mat1(0, 0, i) = values[i];
-    REQUIRE(mat1(0, 0, i) == values[i]);
-  }
+TEST_CASE("Mat element access", "[mat]") {
+  core::Mat mat(2, 3, 2, 0.0f);
 
-  // successful clone
-  core::Mat mat2 = mat1.clone();
-  REQUIRE(mat1 == mat2);
+  mat(1, 2, 0) = 3.14f;
+  mat(1, 2, 1) = 2.71f;
+  REQUIRE(mat(1, 2, 0) == 3.14f);
+  REQUIRE(mat(1, 2, 1) == 2.71f);
 
-  // update cloned matrices and verify source matrix is unchanged
-  constexpr float kNewValue = 5.0f;
-  REQUIRE(mat1(0, 0, 0) != kNewValue);
-  mat2(0, 0) = kNewValue;
-  REQUIRE(mat2(0, 0) == kNewValue);
-  REQUIRE(mat1(0, 0) != kNewValue);
-  REQUIRE(mat1 != mat2);
+  core::Mat single(2, 2, 1, 0.0f);
+  single(1, 1) = 5.0f;
+  REQUIRE(single(1, 1) == single(1, 1, 0));
+}
 
-  core::Mat mat3 = mat2.clone() + 1.0f;
-  REQUIRE(mat3 != mat2);
+TEST_CASE("Mat cloning and equality", "[mat]") {
+  core::Mat original(2, 2, 1, 1.0f);
+  original(0, 0) = 42.0f;
 
-  REQUIRE(mat1 + mat2 == mat2 + mat1);  // A + B == B + A
-  REQUIRE((mat1 + mat2) + mat3 ==
-          mat1 + (mat2 + mat3));  // (A + B) + C == A + (B + C)
-  REQUIRE(mat1 + core::zeros(kHeight, kWidth, kChannels) ==
-          mat1);  // A + 0 == A
-  REQUIRE(mat1 + (-mat1) ==
-          core::zeros(kHeight, kWidth, kChannels));  // A + (-A) == 0
+  core::Mat cloned = original.clone();
+  REQUIRE(cloned == original);
 
-  constexpr double a = 2.0;
-  constexpr double b = 3.0;
-  REQUIRE(a * (b * mat1) == (a * b) * mat1);  // a * (b * A) == (a * b) * A
-  REQUIRE(1.0 * mat1 == mat1);                // 1 * A == A
-  REQUIRE((a + b) * mat1 ==
-          a * mat1 + b * mat1);  // (a + b) * A == a * A + b * A
-  REQUIRE(a * (mat1 + mat2) ==
-          a * mat1 + a * mat2);  // a * (A + B) == a * A + a * B
+  cloned(0, 0) = 99.0f;
+  REQUIRE(original(0, 0) == 42.0f);
+  REQUIRE(cloned(0, 0) == 99.0f);
+  REQUIRE(original != cloned);
+
+  core::Mat different(2, 3, 1, 1.0f);
+  REQUIRE(original != different);
+}
+
+TEST_CASE("Mat arithmetic operations", "[mat]") {
+  core::Mat base(2, 2, 1, 0.0f);
+  base(0, 0) = 1.0f;
+  base(0, 1) = 2.0f;
+  base(1, 0) = 3.0f;
+  base(1, 1) = 4.0f;
+
+  core::Mat add_result = base + 10.0f;
+  REQUIRE(add_result(0, 0) == 11.0f);
+  REQUIRE(add_result(1, 1) == 14.0f);
+
+  core::Mat mul_result = base * 2.0f;
+  REQUIRE(mul_result(0, 0) == 2.0f);
+  REQUIRE(mul_result(1, 1) == 8.0f);
+
+  REQUIRE(3.0f * base == base * 3.0f);
+  REQUIRE(3.0 * base == base * 3.0);  // double
+
+  core::Mat other(2, 2, 1, 1.0f);
+  core::Mat mat_add = base + other;
+  core::Mat mat_sub = base - other;
+  REQUIRE(mat_add(0, 0) == 2.0f);
+  REQUIRE(mat_sub(0, 0) == 0.0f);
+
+  core::Mat neg = -base;
+  REQUIRE(neg(0, 0) == -1.0f);
+  REQUIRE(neg(1, 1) == -4.0f);
+}
+
+TEST_CASE("Mat algebraic properties", "[mat]") {
+  core::Mat a(2, 2, 1, 1.0f);
+  a(0, 0) = 2.0f;
+  core::Mat b(2, 2, 1, 3.0f);
+  b(0, 0) = 4.0f;
+  core::Mat c(2, 2, 1, 5.0f);
+
+  // addition properties
+  REQUIRE(a + b == b + a);                    // commutativity
+  REQUIRE((a + b) + c == a + (b + c));        // associativity
+  REQUIRE(a + core::zeros(2, 2, 1) == a);     // identity
+  REQUIRE(a + (-a) == core::zeros(2, 2, 1));  // inverse
+
+  // scalar multiplication properties
+  constexpr double x = 2.0, y = 3.0;
+  REQUIRE(x * (y * a) == (x * y) * a);    // associativity
+  REQUIRE(1.0 * a == a);                  // identity
+  REQUIRE((x + y) * a == x * a + y * a);  // distributivity
+  REQUIRE(x * (a + b) == x * a + x * b);  // distributivity
+}
+
+TEST_CASE("Mat helper functions and edge cases", "[mat]") {
+  core::Mat zeros = core::zeros(2, 3, 2);
+  core::Mat ones = core::ones(2, 3, 2);
+  REQUIRE(zeros(0, 0, 0) == 0.0f);
+  REQUIRE(ones(1, 2, 1) == 1.0f);
+
+  core::Mat negative(1, 1, 1, -5.0f);
+  core::Mat tiny(1, 1, 1, 1e-6f);
+  core::Mat large(1, 1, 1, 1e6f);
+  REQUIRE(negative(0, 0) == -5.0f);
+  REQUIRE(tiny(0, 0) == 1e-6f);
+  REQUIRE(large(0, 0) == 1e6f);
 }

@@ -7,7 +7,8 @@ Some design decisions:
 - all matrices are floating point (rgb, grayscale, depth map) for consistency across inference, preprocessing, precision, etc.
 
 
-# Everything from scratch
+# TODO
 
 - least squares
 - gaussian kernel
+- CUDA
