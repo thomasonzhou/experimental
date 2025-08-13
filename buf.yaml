@@ -1,0 +1,12 @@
+version: v2
+modules:
+  - path: core
+    name: buf.build/experimental/core
+lint:
+  use:
+    - STANDARD
+  except:
+    - PACKAGE_DIRECTORY_MATCH
+breaking:
+  use:
+    - DEFAULT

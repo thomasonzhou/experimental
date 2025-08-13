@@ -34,3 +34,9 @@ repos:
     rev: 0.8.1
     hooks:
       - id: nbstripout
+
+  - repo: https://github.com/bufbuild/buf
+    rev: v1.56.0
+    hooks:
+      - id: buf-lint
+        args: [--error-format=json, "--exclude-path", "bazel-experimental"]

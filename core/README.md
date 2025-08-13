@@ -12,3 +12,4 @@ Some design decisions:
 - least squares
 - gaussian kernel
 - CUDA
+- protobuf

@@ -11,3 +11,11 @@ cc_library(
     ],
     visibility=["//visibility:public"],
 )
+
+proto_library(
+    name="mat_proto",
+    srcs=[
+        "mat.proto",
+    ],
+    visibility=["//visibility:public"],
+)
