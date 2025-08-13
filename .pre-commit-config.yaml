@@ -39,4 +39,4 @@ repos:
     rev: v1.56.0
     hooks:
       - id: buf-lint
-        args: [--error-format=json, "--exclude-path", "bazel-experimental"]
+        args: ["--exclude-path", "bazel-experimental"]
