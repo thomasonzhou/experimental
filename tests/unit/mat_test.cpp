@@ -47,4 +47,8 @@ TEST_CASE("Mat class") {
   constexpr double b = 3.0;
   REQUIRE(a * (b * mat1) == (a * b) * mat1);  // a * (b * A) == (a * b) * A
   REQUIRE(1.0 * mat1 == mat1);                // 1 * A == A
+  REQUIRE((a + b) * mat1 ==
+          a * mat1 + b * mat1);  // (a + b) * A == a * A + b * A
+  REQUIRE(a * (mat1 + mat2) ==
+          a * mat1 + a * mat2);  // a * (A + B) == a * A + a * B
 }
