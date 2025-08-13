@@ -23,12 +23,15 @@ int main(int argc, char* argv[]) {
   if (!FLAGS_image_in_path.empty()) {
     mat = core::imread(FLAGS_image_in_path);
   } else {
-    mat = core::zeros(10, 10, 3);  // Default to a 100x100 black image
+    mat = core::zeros(5, 5, 4);
   }
 
   mat(0, 0, 0) = 1.0f;  // R
+  mat(0, 0, 3) = 1.0f;
   mat(1, 1, 1) = 1.0f;  // G
+  mat(1, 1, 3) = 1.0f;
   mat(2, 2, 2) = 1.0f;  // B
+  mat(2, 2, 3) = 1.0f;
 
   if (!FLAGS_image_out_path.empty()) {
     core::imwrite(FLAGS_image_out_path, mat);

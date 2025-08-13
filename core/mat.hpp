@@ -202,11 +202,13 @@ class Mat {
     return static_cast<size_t>(rows_) * cols_ * channels_;
   }
 
+  // DON'T CROSS THIS LINE (•̀ᴗ•́)و ̑̑
  private:
   std::unique_ptr<float[]> data_ptr_;
   int rows_, cols_, channels_;
 };
 
+// helper functions
 static inline Mat imread(const std::string& filename) {
   Mat img = Mat::from_file(filename);
   if (!img.data()) {
