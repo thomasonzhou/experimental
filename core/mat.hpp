@@ -27,12 +27,23 @@ class Mat {
     return copy;
   }
 
+  bool oob(int row, int col, int channel) const noexcept {
+    return row < 0 || row >= height_ || col < 0 || col >= width_ ||
+           channel < 0 || channel >= channels_;
+  }
+
   // accessors for pixel values
   float& operator()(const int row, const int col, const int channel) {
+    if (oob(row, col, channel)) {
+      throw std::runtime_error("Out of bounds access");
+    }
     return data_ptr.get()[calculate_index(row, col, channel)];
   }
   const float& operator()(const int row, const int col,
                           const int channel) const {
+    if (oob(row, col, channel)) {
+      throw std::runtime_error("Out of bounds access");
+    }
     return data_ptr.get()[calculate_index(row, col, channel)];
   }
 

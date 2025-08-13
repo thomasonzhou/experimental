@@ -27,6 +27,11 @@ TEST_CASE("Mat element access", "[mat]") {
   core::Mat single(2, 2, 1, 0.0f);
   single(1, 1) = 5.0f;
   REQUIRE(single(1, 1) == single(1, 1, 0));
+
+  // out of bounds access
+  REQUIRE_THROWS_AS(mat(2, 0, 0), std::runtime_error);
+  REQUIRE_THROWS_AS(mat(0, -1, 0), std::runtime_error);
+  REQUIRE_THROWS_AS(single(0, 0, 1), std::runtime_error);  // single channel
 }
 
 TEST_CASE("Mat cloning and equality", "[mat]") {
