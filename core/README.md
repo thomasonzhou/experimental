@@ -1,5 +1,13 @@
-# Everything from scratch (using the std library + Eigen)
+# Core
 
-TODO:
+This is an library for robotics, computer vision, and deep learning.
+
+Some design decisions:
+
+- all matrices are floating point (rgb, grayscale, depth map) for consistency across inference, preprocessing, precision, etc.
+
+
+# Everything from scratch
+
 - least squares
 - gaussian kernel

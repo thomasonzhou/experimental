@@ -7,9 +7,9 @@ TEST_CASE("Mat class") {
   constexpr int kHeight = 3;
   constexpr int kWidth = 5;
   constexpr int kChannels = 1;
-  constexpr std::array<unsigned char, 4> values = {0, 1, 2, 3};
+  constexpr std::array<float, 4> values = {0.0f, 1.0f, 2.0f, 3.0f};
 
-  core::Mat mat1(kHeight, kWidth, kChannels, 0);
+  core::Mat mat1(kHeight, kWidth, kChannels, 0.0f);
   REQUIRE(mat1.width() == kWidth);
   REQUIRE(mat1.height() == kHeight);
   REQUIRE(mat1.channels() == kChannels);
@@ -25,14 +25,14 @@ TEST_CASE("Mat class") {
   REQUIRE(mat1 == mat2);
 
   // update cloned matrices and verify source matrix is unchanged
-  constexpr int kNewValue = 5;
+  constexpr float kNewValue = 5.0f;
   REQUIRE(mat1(0, 0, 0) != kNewValue);
   mat2(0, 0) = kNewValue;
   REQUIRE(mat2(0, 0) == kNewValue);
   REQUIRE(mat1(0, 0) != kNewValue);
   REQUIRE(mat1 != mat2);
 
-  core::Mat mat3 = mat2.clone() + 1;
+  core::Mat mat3 = mat2.clone() + 1.0f;
   REQUIRE(mat3 != mat2);
 
   REQUIRE(mat1 + mat2 == mat2 + mat1);  // A + B == B + A
