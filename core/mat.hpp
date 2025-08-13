@@ -100,7 +100,7 @@ class Mat {
     return result;
   }
 
-  const Mat operator*(const double scalar) const {
+  const Mat operator*(double scalar) const {
     Mat result(height_, width_, channels_, 0);
     for (int h = 0; h < height_; ++h) {
       for (int w = 0; w < width_; ++w) {
@@ -121,6 +121,8 @@ class Mat {
     return *this + (other * -1.0);
   }
 
+  const Mat operator-() const { return *this * -1.0; }
+
   int width() const { return width_; }
   int height() const { return height_; }
   int channels() const { return channels_; }
@@ -131,7 +133,13 @@ class Mat {
   int height_, width_, channels_;
 };
 
-static inline Mat imread(const std::string& filename);
+static inline Mat imread(const std::string& filename) {
+  Mat img(filename);
+  if (!img.data()) {
+    throw std::runtime_error("Failed to read image");
+  }
+  return img;
+}
 
 static inline Mat ones(const int height, const int width, const int channels) {
   Mat mat(height, width, channels, 1);
@@ -147,6 +155,10 @@ static inline Mat zeros(const int height, const int width, const int channels) {
 }
 static inline Mat zeros(const int height, const int width) {
   return zeros(height, width, 1);
+}
+
+static inline Mat operator*(double scalar, const Mat& mat) {
+  return mat * scalar;
 }
 
 };  // namespace core
