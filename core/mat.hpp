@@ -15,9 +15,10 @@ namespace core {
 class Mat {
  public:
   Mat() noexcept;
-  Mat(const std::string& filename);
+  static Mat from_file(const std::string& filename);
 
-  Mat(const int rows, const int cols, const int channels, const float value);
+  explicit Mat(const int rows, const int cols, const int channels,
+               const float value);
 
   Mat(const Mat& other)
       : data_ptr_(std::make_unique<float[]>(other.size())),
@@ -207,7 +208,7 @@ class Mat {
 };
 
 static inline Mat imread(const std::string& filename) {
-  Mat img(filename);
+  Mat img = Mat::from_file(filename);
   if (!img.data()) {
     throw std::runtime_error("Failed to read image");
   }
