@@ -2,10 +2,12 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "core/mat.pb.h"
+
 TEST_CASE("Mat construction and basic properties", "[mat]") {
   core::Mat mat(3, 5, 2, 1.5f);
-  REQUIRE(mat.height() == 3);
-  REQUIRE(mat.width() == 5);
+  REQUIRE(mat.rows() == 3);
+  REQUIRE(mat.cols() == 5);
   REQUIRE(mat.channels() == 2);
   REQUIRE(mat.size() == 30);  // 3 * 5 * 2 = 30
   REQUIRE(mat(0, 0, 0) == 1.5f);
@@ -112,4 +114,54 @@ TEST_CASE("Mat helper functions and edge cases", "[mat]") {
   REQUIRE(negative(0, 0) == -5.0f);
   REQUIRE(tiny(0, 0) == 1e-6f);
   REQUIRE(large(0, 0) == 1e6f);
+}
+
+TEST_CASE("Mat proto serialization and deserialization", "[mat][proto]") {
+  core::Mat original(2, 3, 2, 0.0f);
+  original(0, 0, 0) = 1.5f;
+  original(0, 1, 1) = 2.7f;
+  original(1, 2, 0) = 3.14f;
+  original(1, 0, 1) = -1.0f;
+
+  const core::v1::Mat proto = original.to_proto();
+
+  REQUIRE(proto.rows() == 2);
+  REQUIRE(proto.cols() == 3);
+  REQUIRE(proto.channels() == 2);
+  REQUIRE(proto.data().size() == 12 * sizeof(float));  // 2 * 3 * 2
+
+  const std::string& byte_data = proto.data();
+  const float* float_data = reinterpret_cast<const float*>(byte_data.data());
+
+  constexpr int index_0_0_0 = 0 * 3 * 2 + 0 * 2 + 0;
+  constexpr int index_0_1_1 = 0 * 3 * 2 + 1 * 2 + 1;
+  constexpr int index_1_2_0 = 1 * 3 * 2 + 2 * 2 + 0;
+  constexpr int index_1_0_1 = 1 * 3 * 2 + 0 * 2 + 1;
+
+  REQUIRE(float_data[index_0_0_0] == 1.5f);
+  REQUIRE(float_data[index_0_1_1] == 2.7f);
+  REQUIRE(float_data[index_1_2_0] == 3.14f);
+  REQUIRE(float_data[index_1_0_1] == -1.0f);
+
+  core::Mat reconstructed(1, 1, 1, 0.0f);
+  reconstructed.from_proto(proto);
+
+  REQUIRE(reconstructed.rows() == original.rows());
+  REQUIRE(reconstructed.cols() == original.cols());
+  REQUIRE(reconstructed.channels() == original.channels());
+  REQUIRE(reconstructed == original);
+
+  REQUIRE(reconstructed(0, 0, 0) == 1.5f);
+  REQUIRE(reconstructed(0, 1, 1) == 2.7f);
+  REQUIRE(reconstructed(1, 2, 0) == 3.14f);
+  REQUIRE(reconstructed(1, 0, 1) == -1.0f);
+
+  reconstructed(1, 1, 1) = 99.9f;
+  const core::v1::Mat updated_proto = reconstructed.to_proto();
+  constexpr int index_1_1_1 = 1 * 3 * 2 + 1 * 2 + 1;
+
+  const std::string& updated_byte_data = updated_proto.data();
+  const float* updated_float_data =
+      reinterpret_cast<const float*>(updated_byte_data.data());
+  REQUIRE(updated_float_data[index_1_1_1] == 99.9f);
 }

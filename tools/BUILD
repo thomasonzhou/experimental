@@ -1,7 +1,7 @@
 cc_binary(
-    name="load",
+    name="rw_image",
     srcs=[
-        "load.cpp",
+        "rw_image.cpp",
     ],
     deps=[
         "//core:mat",

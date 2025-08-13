@@ -1,9 +1,9 @@
 edition = "2023";
 
-package core.mat.v1;
+package core.v1;
 
 message Mat {
-  repeated float data = 1;
+  bytes data = 1;
   int32 rows = 2;
   int32 cols = 3;
   int32 channels = 4;

@@ -8,6 +8,7 @@ cc_library(
     ],
     deps=[
         "//core/stb:stb",
+        ":mat_cc_proto",
     ],
     visibility=["//visibility:public"],
 )
@@ -17,5 +18,11 @@ proto_library(
     srcs=[
         "mat.proto",
     ],
+    visibility=["//visibility:public"],
+)
+
+cc_proto_library(
+    name="mat_cc_proto",
+    deps=[":mat_proto"],
     visibility=["//visibility:public"],
 )

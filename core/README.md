@@ -9,7 +9,17 @@ Some design decisions:
 
 # TODO
 
+- fp approximation
+- basic algorithms
+
 - least squares
 - gaussian kernel
 - CUDA
-- protobuf
+- pybind
+
+
+- onnx
+- tensorrt
+- mujoco
+
+- consider protobuf lite
