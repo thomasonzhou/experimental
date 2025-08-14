@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <expected>
 #include <memory>
@@ -19,6 +20,11 @@ enum class MatError {
   InvalidChannelsForOperation,
   WriteImageFailed,
 };
+
+static constexpr bool approx_equal(const float a, const float b,
+                                   const float epsilon = 1e-6f) {
+  return std::fabs(a - b) < epsilon;
+}
 
 class Mat {
  public:

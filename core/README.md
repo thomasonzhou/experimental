@@ -9,7 +9,6 @@ Some design decisions:
 
 # TODO
 
-- fp approximation
 - basic algorithms
 
 - least squares
@@ -20,6 +19,11 @@ Some design decisions:
 
 - onnx
 - tensorrt
+
+- rerun
+
 - mujoco
+
+
 
 - consider protobuf lite

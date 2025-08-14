@@ -51,7 +51,7 @@ bool Mat::operator==(const Mat& other) const {
   }
 
   for (size_t i = 0; i < size(); ++i) {
-    if (data()[i] != other.data()[i]) {
+    if (!approx_equal(data()[i], other.data()[i])) {
       return false;
     }
   }
