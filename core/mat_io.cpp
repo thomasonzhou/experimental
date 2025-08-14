@@ -1,5 +1,7 @@
 #include "core/mat_io.hpp"
 
+#include <cmath>
+
 #include "stb/stb_image.h"
 #include "stb/stb_image_write.h"
 
@@ -84,5 +86,32 @@ Mat ones(const size_t rows, const size_t cols, const size_t channels) noexcept {
 Mat zeros(const size_t rows, const size_t cols,
           const size_t channels) noexcept {
   return Mat(rows, cols, channels, 0.0f);
+}
+
+Mat gaussian(const size_t rows, const size_t cols, const size_t channels,
+             const std::optional<float> sigma_rows,
+             const std::optional<float> sigma_cols) noexcept {
+  const float mean_x = static_cast<float>(cols - 1) / 2.0f;
+  const float mean_y = static_cast<float>(rows - 1) / 2.0f;
+  constexpr float kDefaultSigmaFactor = 0.25f;
+  const float sigma_x = sigma_cols.value_or(cols * kDefaultSigmaFactor);
+  const float sigma_y = sigma_rows.value_or(rows * kDefaultSigmaFactor);
+
+  const float inv2sx2 = 1.0f / (2.0f * sigma_x * sigma_x);
+  const float inv2sy2 = 1.0f / (2.0f * sigma_y * sigma_y);
+
+  Mat mat(rows, cols, channels);
+  for (size_t r = 0; r < rows; ++r) {
+    for (size_t c = 0; c < cols; ++c) {
+      float res_x = static_cast<float>(c) - mean_x;
+      float res_y = static_cast<float>(r) - mean_y;
+      float value = std::exp(-(res_x * res_x) * inv2sx2) *
+                    std::exp(-(res_y * res_y) * inv2sy2);
+      for (size_t ch = 0; ch < channels; ++ch) {
+        mat(r, c, ch) = value;
+      }
+    }
+  }
+  return mat;
 }
 };  // namespace core
