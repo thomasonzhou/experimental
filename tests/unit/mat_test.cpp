@@ -67,36 +67,9 @@ TEST_CASE("Mat arithmetic operations", "[mat]") {
   REQUIRE(3.0f * base == base * 3.0f);
   REQUIRE(3.0 * base == base * 3.0);  // double
 
-  Mat other(2, 2, 1, 1.0f);
-  Mat mat_add = base + other;
-  Mat mat_sub = base - other;
-  REQUIRE(mat_add(0, 0) == 2.0f);
-  REQUIRE(mat_sub(0, 0) == 0.0f);
-
   Mat neg = -base;
   REQUIRE(neg(0, 0) == -1.0f);
   REQUIRE(neg(1, 1) == -4.0f);
-}
-
-TEST_CASE("Mat algebraic properties", "[mat]") {
-  Mat a(2, 2, 1, 1.0f);
-  a(0, 0) = 2.0f;
-  Mat b(2, 2, 1, 3.0f);
-  b(0, 0) = 4.0f;
-  Mat c(2, 2, 1, 5.0f);
-
-  // addition properties
-  REQUIRE(a + b == b + a);              // commutativity
-  REQUIRE((a + b) + c == a + (b + c));  // associativity
-  REQUIRE(a + zeros(2, 2, 1) == a);     // identity
-  REQUIRE(a + (-a) == zeros(2, 2, 1));  // inverse
-
-  // scalar multiplication properties
-  constexpr double x = 2.0, y = 3.0;
-  REQUIRE(x * (y * a) == (x * y) * a);    // associativity
-  REQUIRE(1.0 * a == a);                  // identity
-  REQUIRE((x + y) * a == x * a + y * a);  // distributivity
-  REQUIRE(x * (a + b) == x * a + x * b);  // distributivity
 }
 
 TEST_CASE("Mat helper functions and edge cases", "[mat]") {

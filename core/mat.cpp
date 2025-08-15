@@ -58,23 +58,6 @@ bool Mat::operator==(const Mat& other) const {
   return true;
 }
 
-// why support these?
-Mat Mat::operator+(const Mat& other) const noexcept {
-  Mat result(rows_, cols_, channels_);
-  for (size_t i = 0; i < size(); ++i) {
-    result.data()[i] = data()[i] + other.data()[i];
-  }
-  return result;
-}
-
-Mat Mat::operator-(const Mat& other) const noexcept {
-  Mat result(rows_, cols_, channels_);
-  for (size_t i = 0; i < size(); ++i) {
-    result.data()[i] = data()[i] - other.data()[i];
-  }
-  return result;
-}
-
 Mat Mat::operator*(const float scalar) const noexcept {
   Mat result(rows_, cols_, channels_);
   for (size_t i = 0; i < size(); ++i) {

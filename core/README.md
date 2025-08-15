@@ -12,10 +12,11 @@ Some design decisions:
 - basic algorithms
 
 - least squares
-- gaussian kernel
 - CUDA
-- pybind
+- nanobind
 
+
+- 2D convolution with outer product of 1D convolution
 
 - onnx
 - tensorrt
