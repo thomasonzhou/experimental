@@ -18,7 +18,8 @@ cc_library(
         "mat_io.hpp",
     ],
     deps = [
-        "//core/stb:stb",
+        "@stb//:stb_image",
+        "@stb//:stb_image_write",
         ":mat",
         ":mat_cc_proto",
     ],
