@@ -8,3 +8,15 @@ cc_binary(
         "@gflags//:gflags"
     ]
 )
+
+cc_binary(
+    name="camera_gui",
+    srcs=[
+        "camera_gui.cpp",
+    ],
+    deps=[
+        "//third_party/imgui:imgui",
+        "//third_party/imgui:imgui_glfw",
+        "//third_party/imgui:imgui_opengl3",
+    ]
+)
