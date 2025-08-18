@@ -357,14 +357,12 @@ int main(int, char**) {
     cam_w = cam->w();
     cam_h = cam->h();
     glGenTextures(1, &cam_tex);
-    glBindTexture(0x0DE1 /*GL_TEXTURE_2D*/, cam_tex);
-    glTexParameteri(0x0DE1, 0x2801 /*GL_TEXTURE_MIN_FILTER*/,
-                    0x2601 /*GL_LINEAR*/);
-    glTexParameteri(0x0DE1, 0x2800 /*GL_TEXTURE_MAG_FILTER*/,
-                    0x2601 /*GL_LINEAR*/);
-    glPixelStorei(0x0CF5 /*GL_UNPACK_ALIGNMENT*/, 1);
-    glTexImage2D(0x0DE1, 0, 0x1907 /*GL_RGB*/, cam_w, cam_h, 0,
-                 0x1907 /*GL_RGB*/, 0x1401 /*GL_UNSIGNED_BYTE*/, nullptr);
+    glBindTexture(GL_TEXTURE_2D, cam_tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, cam_w, cam_h, 0, GL_RGB,
+                 GL_UNSIGNED_BYTE, nullptr);
   } catch (const std::exception& e) {
     fprintf(stderr, "Camera init failed: %s\n", e.what());
   }
@@ -440,7 +438,7 @@ int main(int, char**) {
     glfwGetFramebufferSize(window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
     glClearColor(0, 0, 0, 0);
-    glClear(0x00004000 /*GL_COLOR_BUFFER_BIT*/);
+    glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     // Update and Render additional Platform Windows
