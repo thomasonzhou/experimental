@@ -15,8 +15,6 @@ cc_binary(
         "camera_gui.cpp",
     ],
     deps=[
-        "//third_party/imgui:imgui",
-        "//third_party/imgui:imgui_glfw",
-        "//third_party/imgui:imgui_opengl3",
+        "//third_party/imgui:imgui_glfw_opengl3"
     ]
 )

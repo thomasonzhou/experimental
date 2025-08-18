@@ -52,3 +52,12 @@ cc_library(
         "-ldl",
     ],
 )
+
+cc_library(
+    name = "imgui_glfw_opengl3",
+    deps = [
+        ":imgui",
+        ":imgui_glfw",
+        ":imgui_opengl3",
+    ],
+)
