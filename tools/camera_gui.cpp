@@ -407,10 +407,10 @@ int main(int, char**) {
     if (cam) {
       if (auto rgb = cam->try_grab_rgb()) {
         cam_rgb = std::move(*rgb);
-        glBindTexture(0x0DE1 /*GL_TEXTURE_2D*/, cam_tex);
-        glPixelStorei(0x0CF5 /*GL_UNPACK_ALIGNMENT*/, 1);
-        glTexSubImage2D(0x0DE1, 0, 0, 0, cam_w, cam_h, 0x1907 /*GL_RGB*/,
-                        0x1401 /*GL_UNSIGNED_BYTE*/, cam_rgb.data());
+        glBindTexture(GL_TEXTURE_2D, cam_tex);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexSubImage2D(0x0DE1, 0, 0, 0, cam_w, cam_h, GL_RGB, GL_UNSIGNED_BYTE,
+                        cam_rgb.data());
       }
       // Dockable camera window
       ImGui::Begin("Camera");
