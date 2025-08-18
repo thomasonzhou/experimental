@@ -107,8 +107,8 @@ class Camera {
  public:
   struct Config {
     std::string dev{"/dev/video0"};
-    int w{920};
-    int h{1080};
+    int w{800};
+    int h{600};
     int fps{30};
   };
   explicit Camera(const Config& cfg) : cfg_(cfg) {
@@ -127,6 +127,7 @@ class Camera {
       throw std::runtime_error("VIDIOC_S_FMT failed");
     w_ = (int)fmt.fmt.pix.width;
     h_ = (int)fmt.fmt.pix.height;
+    fps_ = cfg_.fps;
 
     v4l2_streamparm parm{};
     parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -199,11 +200,12 @@ class Camera {
   }
   int w() const { return w_; }
   int h() const { return h_; }
+  int fps() const { return fps_; }
 
  private:
   Config cfg_{};
   int fd_{-1};
-  int w_{0}, h_{0};
+  int w_{0}, h_{0}, fps_{30};
   std::vector<MappedBuffer> bufs_{};
 };
 }  // namespace v4l2cam
@@ -248,14 +250,15 @@ int main(int, char**) {
 #endif
 
   // Create window with graphics context
-  float main_scale = 1.0f;  // Default scale
+  float main_scale = 2.5f;  // Increased default scale for larger text
 #if GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 3
   // Try to get content scale for monitor if available
   GLFWmonitor* primary = glfwGetPrimaryMonitor();
   if (primary) {
     float xscale, yscale;
     glfwGetMonitorContentScale(primary, &xscale, &yscale);
-    main_scale = xscale;  // Use x scale as main scale
+    main_scale =
+        xscale * 2.5f;  // Apply additional 1.5x multiplier to monitor scale
   }
 #endif
   GLFWwindow* window =
@@ -330,6 +333,10 @@ int main(int, char**) {
     style.Colors[ImGuiCol_WindowBg].w = 1.0f;
   }
 
+  // Load and scale fonts
+  io.Fonts->AddFontDefault();
+  io.FontGlobalScale = main_scale;  // Scale fonts globally
+
   // Setup Platform/Renderer backends
   ImGui_ImplGlfw_InitForOpenGL(window, true);
 #ifdef __EMSCRIPTEN__
@@ -365,11 +372,6 @@ int main(int, char**) {
 
   // Load Fonts (optional – keep defaults)
   // io.Fonts->AddFontDefault();
-
-  // Our state
-  bool show_demo_window = true;
-  bool show_another_window = false;
-  ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
   // Main loop
 #ifdef __EMSCRIPTEN__
@@ -414,8 +416,10 @@ int main(int, char**) {
       }
       // Dockable camera window
       ImGui::Begin("Camera");
-      ImGui::TextUnformatted("Source: /dev/video0  (YUYV → RGB888, CPU)");
+      ImGui::TextUnformatted("Source: /dev/video0  (YUYV -> RGB888, CPU)");
       ImGui::Text("Resolution: %d x %d", cam_w, cam_h);
+      ImGui::SameLine();
+      ImGui::Text("Camera frame rate: %d FPS", cam->fps());
       if (cam_tex != 0) {
         ImGui::Image((ImTextureID)(intptr_t)cam_tex,
                      ImVec2((float)cam_w, (float)cam_h));
@@ -423,51 +427,19 @@ int main(int, char**) {
         ImGui::TextColored(ImVec4(1, 0.5f, 0.5f, 1),
                            "No texture. Camera not initialized.");
       }
-      ImGui::End();
-    }
-#endif
-
-    // 1. Show the big demo window (Most of the sample code is in
-    // ImGui::ShowDemoWindow()!).
-    if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
-
-    // 2. Show a simple window that we create ourselves.
-    {
-      static float f = 0.0f;
-      static int counter = 0;
-
-      ImGui::Begin("Hello, world!");
-      ImGui::Text("This is some useful text.");
-      ImGui::Checkbox("Demo Window", &show_demo_window);
-      ImGui::Checkbox("Another Window", &show_another_window);
-
-      ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-      ImGui::ColorEdit3("clear color", (float*)&clear_color);
-
-      if (ImGui::Button("Button")) counter++;
-      ImGui::SameLine();
-      ImGui::Text("counter = %d", counter);
 
       ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                   1000.0f / io.Framerate, io.Framerate);
       ImGui::End();
     }
-
-    // 3. Show another simple window.
-    if (show_another_window) {
-      ImGui::Begin("Another Window", &show_another_window);
-      ImGui::Text("Hello from another window!");
-      if (ImGui::Button("Close Me")) show_another_window = false;
-      ImGui::End();
-    }
+#endif
 
     // Rendering
     ImGui::Render();
     int display_w, display_h;
     glfwGetFramebufferSize(window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
-    glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w,
-                 clear_color.z * clear_color.w, clear_color.w);
+    glClearColor(0, 0, 0, 0);
     glClear(0x00004000 /*GL_COLOR_BUFFER_BIT*/);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
