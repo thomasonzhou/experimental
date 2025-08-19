@@ -4,7 +4,7 @@ cc_binary(
         "rw_image.cpp",
     ],
     deps=[
-        "//core:mat_io",
+        "//core/mat:mat_io",
         "@gflags//:gflags"
     ]
 )
@@ -16,6 +16,6 @@ cc_binary(
     ],
     deps=[
         "//third_party/imgui:imgui_glfw_opengl3",
-        "//core:mat"
+        "//core/video:color_conversion"
     ]
 )

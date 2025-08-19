@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 
-#include "core/mat_io.hpp"
+#include "core/mat/mat_io.hpp"
 
 DEFINE_string(image_in_path, "", "Path to the input image file");
 DEFINE_string(image_out_path, "", "Path to save the output image file");
@@ -32,6 +32,8 @@ int main(int argc, char* argv[]) {
   } else {
     mat = core::gaussian(100, 200, 1);
   }
+
+  // playground
 
   // mat = core::zeros(5, 5, 4);
   // mat(0, 0, 0) = 1.0f;  // R

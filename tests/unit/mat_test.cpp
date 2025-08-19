@@ -1,9 +1,9 @@
-#include "core/mat.hpp"
+#include "core/mat/mat.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "core/mat.pb.h"
-#include "core/mat_io.hpp"
+#include "core/mat/mat.pb.h"
+#include "core/mat/mat_io.hpp"
 
 namespace core {
 TEST_CASE("Mat construction and basic properties", "[mat]") {

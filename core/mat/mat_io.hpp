@@ -6,8 +6,8 @@
 #include <optional>
 #include <string>
 
-#include "core/mat.hpp"
-#include "core/mat.pb.h"
+#include "core/mat/mat.hpp"
+#include "core/mat/mat.pb.h"
 
 namespace core {
 [[nodiscard]] ::core::v1::Mat to_proto(const Mat &mat) noexcept;
