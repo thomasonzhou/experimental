@@ -7,10 +7,10 @@
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
 #endif
-#include <GLFW/glfw3.h>  // Will drag system OpenGL headers
+#include <GLFW/glfw3.h>
 
-// Select OpenGL loader headers if the build defines one (matches official
-// examples)
+#include "core/mat.hpp"
+
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
 #include <GL/gl3w.h>
 #elif defined(IMGUI_IMPL_OPENGL_LOADER_GLEW)
@@ -28,15 +28,12 @@ using namespace gl;
 #include <glbinding/glbinding.h>
 using namespace gl;
 #else
-// IMGUI_IMPL_OPENGL_LOADER_CUSTOM may be defined by the build; otherwise system
-// GL will be used via GLFW.
 #endif
 
 #ifdef __EMSCRIPTEN__
 #include "../libs/emscripten/emscripten_mainloop_stub.h"
 #endif
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Linux V4L2 camera capture (YUYV → RGB888) + OpenGL texture upload
 // Wrapped for Linux builds only; harmless on other platforms.
 #ifdef __linux__
@@ -60,7 +57,7 @@ using namespace gl;
 
 namespace v4l2cam {  // isolate symbols (namespacing requested)
 // Robust ioctl with EINTR handling.
-static int xioctl(int fd, unsigned long req, void* arg) {
+static int xioctl(int fd, unsigned long req, void* arg) noexcept {
   for (;;) {
     int r = ::ioctl(fd, req, arg);
     if (r == -1 && errno == EINTR) continue;
@@ -74,33 +71,35 @@ struct MappedBuffer {
   MappedBuffer() : data(NULL), size(0) {}
 };
 
-// YUYV (Y0 U0 Y1 V0) -> RGB888 (BT.601 approx)
-static void yuyv_to_rgb(const std::uint8_t* src, int w, int h,
-                        std::vector<std::uint8_t>& out_rgb) {
+// YUYV (Y0 U0 Y1 V0) -> RGB F32 (BT.601)
+static core::Mat yuyv_to_rgb(const std::uint8_t* src, int w, int h) {
+  core::Mat out_rgb(h, w, 3);
   const int n = w * h;
-  out_rgb.resize(n * 3);
-  auto clamp = [](int v) { return v < 0 ? 0 : (v > 255 ? 255 : v); };
+  auto clamp = [](float v) {
+    return v < 0.0f ? 0.0f : (v > 255.0f ? 255.0f : v);
+  };
   const std::uint8_t* s = src;
-  std::uint8_t* d = out_rgb.data();
+  float* d = out_rgb.data();
   for (int i = 0; i < n; i += 2) {
     int y0 = s[0];
     int u = s[1] - 128;
     int y1 = s[2];
     int v = s[3] - 128;
-    auto y2rgb = [&](int y, std::uint8_t* o) {
+    auto y2rgb = [&](int y, float* o) {
       int c = y - 16;
-      int r = (298 * c + 409 * v + 128) >> 8;
-      int g = (298 * c - 100 * u - 208 * v + 128) >> 8;
-      int b = (298 * c + 516 * u + 128) >> 8;
-      o[0] = (std::uint8_t)clamp(r);
-      o[1] = (std::uint8_t)clamp(g);
-      o[2] = (std::uint8_t)clamp(b);
+      float r = (298 * c + 409 * v + 128) >> 8;
+      float g = (298 * c - 100 * u - 208 * v + 128) >> 8;
+      float b = (298 * c + 516 * u + 128) >> 8;
+      o[0] = clamp(r) / 255.0f;
+      o[1] = clamp(g) / 255.0f;
+      o[2] = clamp(b) / 255.0f;
     };
     y2rgb(y0, d + 0);
     y2rgb(y1, d + 3);
     s += 4;
     d += 6;
   }
+  return out_rgb;
 }
 
 class Camera {
@@ -178,7 +177,7 @@ class Camera {
       if (b.data && b.size) ::munmap(b.data, b.size);
     if (fd_ >= 0) ::close(fd_);
   }
-  std::optional<std::vector<std::uint8_t>> try_grab_rgb() {
+  std::optional<core::Mat> try_grab_rgb() {
     struct pollfd pfd{fd_, POLLIN, 0};
     int pr = ::poll(&pfd, 1, 0);
     if (pr <= 0) return std::nullopt;
@@ -192,8 +191,7 @@ class Camera {
     }
     const std::uint8_t* yuyv =
         static_cast<const std::uint8_t*>(bufs_[buf.index].data);
-    std::vector<std::uint8_t> rgb;
-    yuyv_to_rgb(yuyv, w_, h_, rgb);
+    core::Mat rgb = yuyv_to_rgb(yuyv, w_, h_);
     if (xioctl(fd_, VIDIOC_QBUF, &buf) == -1)
       throw std::runtime_error("VIDIOC_QBUF failed");
     return rgb;
@@ -350,7 +348,7 @@ int main(int, char**) {
   std::unique_ptr<v4l2cam::Camera> cam{};
   unsigned int cam_tex = 0;
   int cam_w = 0, cam_h = 0;
-  std::vector<std::uint8_t> cam_rgb;  // CPU RGB buffer
+  core::Mat cam_rgb;  // CPU RGB buffer
   try {
     v4l2cam::Camera::Config cfg;  // defaults: /dev/video0, 640x480@30
     cam = std::make_unique<v4l2cam::Camera>(cfg);
@@ -361,8 +359,8 @@ int main(int, char**) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, cam_w, cam_h, 0, GL_RGB,
-                 GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, cam_w, cam_h, 0, GL_RGB, GL_FLOAT,
+                 nullptr);
   } catch (const std::exception& e) {
     fprintf(stderr, "Camera init failed: %s\n", e.what());
   }
@@ -409,7 +407,7 @@ int main(int, char**) {
         cam_rgb = std::move(*rgb);
         glBindTexture(GL_TEXTURE_2D, cam_tex);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexSubImage2D(0x0DE1, 0, 0, 0, cam_w, cam_h, GL_RGB, GL_UNSIGNED_BYTE,
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, cam_w, cam_h, GL_RGB, GL_FLOAT,
                         cam_rgb.data());
       }
       // Dockable camera window

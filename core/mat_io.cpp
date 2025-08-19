@@ -1,10 +1,9 @@
 #include "core/mat_io.hpp"
 
 #include <stb_image.h>
+#include <stb_image_write.h>
 
 #include <cmath>
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image_write.h>
 
 namespace core {
 
@@ -115,4 +114,5 @@ Mat gaussian(const size_t rows, const size_t cols, const size_t channels,
   }
   return mat;
 }
+
 };  // namespace core

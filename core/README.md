@@ -18,6 +18,9 @@ Some design decisions:
 
 - 2D convolution with outer product of 1D convolution
 
+- control refresh rate of each node by dragging slider
+- profile inference time
+
 - onnx
 - tensorrt
 
@@ -26,7 +29,5 @@ Some design decisions:
 - v4l2
 
 - mujoco
-
-
 
 - consider protobuf lite

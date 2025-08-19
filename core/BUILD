@@ -23,6 +23,7 @@ cc_library(
         ":mat",
         ":mat_cc_proto",
     ],
+    defines = ["STB_IMAGE_WRITE_IMPLEMENTATION"],
     visibility = ["//visibility:public"],
 )
 

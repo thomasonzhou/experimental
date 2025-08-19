@@ -144,8 +144,9 @@ class Mat {
 };
 
 [[nodiscard]] Mat operator*(const float scalar, const Mat& mat) noexcept;
-[[nodiscard]] inline Mat operator*(const double scalar,
-                                   const Mat& mat) noexcept {
+
+template <typename T>
+[[nodiscard]] inline Mat operator*(const T scalar, const Mat& mat) noexcept {
   return operator*(static_cast<float>(scalar), mat);
 }
 
