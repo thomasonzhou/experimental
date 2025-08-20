@@ -16,6 +16,7 @@ cc_binary(
     ],
     deps=[
         "//third_party/imgui:imgui_glfw_opengl3",
-        "//core/video:color_conversion"
+        "//core/video:color_conversion",
+        "//core/video/v4l2:v4l2_utils"
     ]
 )

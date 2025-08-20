@@ -10,11 +10,9 @@
 #include <fcntl.h>
 #include <linux/videodev2.h>
 #include <poll.h>
-#include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include <cerrno>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -23,20 +21,9 @@
 #include <string>
 #include <vector>
 
-namespace v4l2cam {
-static int xioctl(int fd, unsigned long req, void* arg) noexcept {
-  for (;;) {
-    int r = ::ioctl(fd, req, arg);
-    if (r == -1 && errno == EINTR) continue;
-    return r;
-  }
-}
+#include "core/video/v4l2/v4l2_utils.hpp"
 
-struct MappedBuffer {
-  void* data;
-  std::size_t size;
-  MappedBuffer() : data(NULL), size(0) {}
-};
+namespace v4l2cam {
 
 class Camera {
  public:
@@ -59,7 +46,7 @@ class Camera {
     fmt.fmt.pix.height = cfg_.h;
     fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
     fmt.fmt.pix.field = V4L2_FIELD_ANY;
-    if (xioctl(fd_, VIDIOC_S_FMT, &fmt) == -1)
+    if (core::video::v4l2::xioctl(fd_, VIDIOC_S_FMT, &fmt) == -1)
       throw std::runtime_error("VIDIOC_S_FMT failed");
     w_ = (int)fmt.fmt.pix.width;
     h_ = (int)fmt.fmt.pix.height;
@@ -68,7 +55,8 @@ class Camera {
     req.count = 4;
     req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory = V4L2_MEMORY_MMAP;
-    if (xioctl(fd_, VIDIOC_REQBUFS, &req) == -1 || req.count < 2)
+    if (core::video::v4l2::xioctl(fd_, VIDIOC_REQBUFS, &req) == -1 ||
+        req.count < 2)
       throw std::runtime_error("VIDIOC_REQBUFS failed");
 
     bufs_.resize(req.count);
@@ -77,7 +65,7 @@ class Camera {
       b.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
       b.memory = V4L2_MEMORY_MMAP;
       b.index = (uint32_t)i;
-      if (xioctl(fd_, VIDIOC_QUERYBUF, &b) == -1)
+      if (core::video::v4l2::xioctl(fd_, VIDIOC_QUERYBUF, &b) == -1)
         throw std::runtime_error("VIDIOC_QUERYBUF failed");
       void* m = ::mmap(nullptr, b.length, PROT_READ | PROT_WRITE, MAP_SHARED,
                        fd_, b.m.offset);
@@ -91,19 +79,20 @@ class Camera {
       b.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
       b.memory = V4L2_MEMORY_MMAP;
       b.index = (uint32_t)i;
-      if (xioctl(fd_, VIDIOC_QBUF, &b) == -1)
+      if (core::video::v4l2::xioctl(fd_, VIDIOC_QBUF, &b) == -1)
         throw std::runtime_error("VIDIOC_QBUF failed");
     }
 
     v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    if (xioctl(fd_, VIDIOC_STREAMON, &type) == -1)
+    if (core::video::v4l2::xioctl(fd_, VIDIOC_STREAMON, &type) == -1)
       throw std::runtime_error("VIDIOC_STREAMON failed");
   }
 
   ~Camera() {
     try {
       v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-      if (fd_ >= 0) (void)xioctl(fd_, VIDIOC_STREAMOFF, &type);
+      if (fd_ >= 0)
+        (void)core::video::v4l2::xioctl(fd_, VIDIOC_STREAMOFF, &type);
     } catch (...) {
     }
     for (auto& b : bufs_)
@@ -120,7 +109,7 @@ class Camera {
     std::memset(&buf, 0, sizeof(buf));
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory = V4L2_MEMORY_MMAP;
-    if (xioctl(fd_, VIDIOC_DQBUF, &buf) == -1) {
+    if (core::video::v4l2::xioctl(fd_, VIDIOC_DQBUF, &buf) == -1) {
       if (errno == EAGAIN) return std::nullopt;
       throw std::runtime_error("VIDIOC_DQBUF failed");
     }
@@ -128,14 +117,12 @@ class Camera {
     const std::uint8_t* yuyv =
         static_cast<const std::uint8_t*>(bufs_[buf.index].data);
 
-    // Convert directly into reused buffer (zero allocation after first frame)
     core::video::convert_yuyv_to_rgb_f32_inplace(
         yuyv, w_, h_, core::video::kBT709, rgb_buffer_);
 
-    if (xioctl(fd_, VIDIOC_QBUF, &buf) == -1)
+    if (core::video::v4l2::xioctl(fd_, VIDIOC_QBUF, &buf) == -1)
       throw std::runtime_error("VIDIOC_QBUF failed");
-    return std::cref(
-        rgb_buffer_);  // std::cref creates reference_wrapper<const T>
+    return std::cref(rgb_buffer_);
   }
 
   int w() const { return w_; }
@@ -145,7 +132,7 @@ class Camera {
   Config cfg_{};
   int fd_{-1};
   int w_{0}, h_{0};
-  std::vector<MappedBuffer> bufs_{};
+  std::vector<core::video::v4l2::MappedBuffer> bufs_{};
   mutable core::Mat rgb_buffer_;  // Reused buffer for RGB conversion
 };
 }  // namespace v4l2cam
