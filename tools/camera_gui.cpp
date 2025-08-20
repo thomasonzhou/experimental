@@ -4,6 +4,7 @@
 #include <memory>
 #include <stdexcept>
 
+#include "core/video/camera_interface.hpp"
 #include "core/video/v4l2/v4l2_camera.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -51,11 +52,12 @@ int main(int, char**) {
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  std::unique_ptr<core::video::v4l2::Camera> camera;
+  std::unique_ptr<core::video::CameraInterface> camera;
   unsigned int cam_tex = 0;
   int cam_w = 0, cam_h = 0;
 
   try {
+    // Create V4L2 camera with default config
     core::video::v4l2::Config config;
     config.device = "/dev/video0";
     config.width = 640;
@@ -95,7 +97,9 @@ int main(int, char**) {
       }
 
       ImGui::Begin("Camera Feed");
+      ImGui::Text("Camera: %s", camera->device().c_str());
       ImGui::Text("Resolution: %d x %d", cam_w, cam_h);
+      ImGui::Text("Streaming: %s", camera->streaming() ? "Yes" : "No");
       if (cam_tex != 0) {
         ImGui::Image((ImTextureID)(intptr_t)cam_tex,
                      ImVec2((float)cam_w, (float)cam_h));

@@ -11,6 +11,7 @@ cc_library(
     deps = [
         ":v4l2_utils",
         "//core/mat:mat",
+        "//core/video:camera_interface",
         "//core/video:color_conversion",
     ],
     visibility = ["//visibility:public"]

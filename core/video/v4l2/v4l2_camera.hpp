@@ -11,6 +11,7 @@
 #endif
 
 #include "core/mat/mat.hpp"
+#include "core/video/camera_interface.hpp"
 #include "core/video/v4l2/v4l2_utils.hpp"
 
 namespace core::video::v4l2 {
@@ -23,18 +24,21 @@ struct Config {
   unsigned int pixfmt{V4L2_PIX_FMT_YUYV};  // YUYV 4:2:2
 };
 
-class Camera {
+class Camera : public core::video::CameraInterface {
  public:
   explicit Camera(const Config& cfg);
   ~Camera();
 
-  std::optional<std::reference_wrapper<const core::Mat>> try_grab_rgb();
+  // CameraInterface implementation
+  std::optional<std::reference_wrapper<const core::Mat>> try_grab_rgb()
+      override;
+  int width() const noexcept override { return w_; }
+  int height() const noexcept override { return h_; }
+  bool streaming() const noexcept override { return streaming_; }
+  std::string device() const noexcept override { return cfg_.device; }
 
+  // V4L2-specific methods
   Config config() const { return cfg_; }
-
-  int width() const { return w_; }
-  int height() const { return h_; }
-  bool streaming() const { return streaming_; }
 
  private:
   void init_device();
