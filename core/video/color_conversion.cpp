@@ -4,7 +4,7 @@
 
 namespace core::video {
 
-// YUYV (Y0 U0 Y1 V0) -> RGB F32 (BT.601)
+// YUYV 4:2:2 -> RGB F32
 core::Mat convert_yuyv_to_rgb_f32(const std::uint8_t* src, int w, int h,
                                   const ColorSpaceGains& gains) {
   core::Mat out_rgb(h, w, 3);
