@@ -6,7 +6,7 @@
 
 namespace core::video::v4l2 {
 
-static int xioctl(int fd, unsigned long req, void* arg) noexcept {
+inline int xioctl(int fd, unsigned long req, void* arg) noexcept {
   int r;
   do {
     r = ioctl(fd, req, arg);
