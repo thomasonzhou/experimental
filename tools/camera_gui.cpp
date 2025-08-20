@@ -128,7 +128,8 @@ class Camera {
 
     const std::uint8_t* yuyv =
         static_cast<const std::uint8_t*>(bufs_[buf.index].data);
-    core::Mat rgb = core::video::convert_yuyv_to_rgb_f32(yuyv, w_, h_);
+    core::Mat rgb =
+        core::video::convert_yuyv_to_rgb_f32(yuyv, w_, h_, core::video::kBT709);
 
     if (xioctl(fd_, VIDIOC_QBUF, &buf) == -1)
       throw std::runtime_error("VIDIOC_QBUF failed");
