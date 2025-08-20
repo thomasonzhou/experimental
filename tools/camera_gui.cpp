@@ -24,7 +24,6 @@
 #include <vector>
 
 namespace v4l2cam {
-// Robust ioctl with EINTR handling.
 static int xioctl(int fd, unsigned long req, void* arg) noexcept {
   for (;;) {
     int r = ::ioctl(fd, req, arg);
@@ -112,7 +111,7 @@ class Camera {
     if (fd_ >= 0) ::close(fd_);
   }
 
-  std::optional<core::Mat> try_grab_rgb() {
+  std::optional<std::reference_wrapper<const core::Mat>> try_grab_rgb() {
     struct pollfd pfd{fd_, POLLIN, 0};
     int pr = ::poll(&pfd, 1, 0);
     if (pr <= 0) return std::nullopt;
@@ -128,12 +127,15 @@ class Camera {
 
     const std::uint8_t* yuyv =
         static_cast<const std::uint8_t*>(bufs_[buf.index].data);
-    core::Mat rgb =
-        core::video::convert_yuyv_to_rgb_f32(yuyv, w_, h_, core::video::kBT709);
+
+    // Convert directly into reused buffer (zero allocation after first frame)
+    core::video::convert_yuyv_to_rgb_f32_inplace(
+        yuyv, w_, h_, core::video::kBT709, rgb_buffer_);
 
     if (xioctl(fd_, VIDIOC_QBUF, &buf) == -1)
       throw std::runtime_error("VIDIOC_QBUF failed");
-    return rgb;
+    return std::cref(
+        rgb_buffer_);  // std::cref creates reference_wrapper<const T>
   }
 
   int w() const { return w_; }
@@ -144,6 +146,7 @@ class Camera {
   int fd_{-1};
   int w_{0}, h_{0};
   std::vector<MappedBuffer> bufs_{};
+  mutable core::Mat rgb_buffer_;  // Reused buffer for RGB conversion
 };
 }  // namespace v4l2cam
 #endif  // __linux__
@@ -198,7 +201,6 @@ int main(int, char**) {
   std::unique_ptr<v4l2cam::Camera> cam{};
   unsigned int cam_tex = 0;
   int cam_w = 0, cam_h = 0;
-  core::Mat cam_rgb;
 
   try {
     v4l2cam::Camera::Config cfg;
@@ -227,10 +229,10 @@ int main(int, char**) {
     ImGui::NewFrame();
 
 #ifdef __linux__
-    // Camera frame capture
     if (cam) {
-      if (auto rgb = cam->try_grab_rgb()) {
-        cam_rgb = std::move(*rgb);
+      if (auto rgb_opt = cam->try_grab_rgb()) {
+        const core::Mat& cam_rgb =
+            rgb_opt.value();  // reference_wrapper has implicit conversion to T&
         glBindTexture(GL_TEXTURE_2D, cam_tex);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, cam_w, cam_h, GL_RGB, GL_FLOAT,
                         cam_rgb.data());

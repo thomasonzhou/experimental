@@ -33,6 +33,9 @@ inline constexpr ColorSpaceGains kBT601 =
 inline constexpr ColorSpaceGains kBT709 =
     compute_color_space_gains(0.2126f, 0.0722f);
 
+void convert_yuyv_to_rgb_f32_inplace(const std::uint8_t* src, int w, int h,
+                                     const ColorSpaceGains& cs,
+                                     core::Mat& output);
 core::Mat convert_yuyv_to_rgb_f32(const std::uint8_t* src, int w, int h,
                                   const ColorSpaceGains& cs);
 

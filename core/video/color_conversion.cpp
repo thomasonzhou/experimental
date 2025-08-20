@@ -5,12 +5,19 @@
 namespace core::video {
 
 // YUYV 4:2:2 -> RGB F32
-core::Mat convert_yuyv_to_rgb_f32(const std::uint8_t* src, int w, int h,
-                                  const ColorSpaceGains& gains) {
-  core::Mat out_rgb(h, w, 3);
+void convert_yuyv_to_rgb_f32_inplace(const std::uint8_t* src, int w, int h,
+                                     const ColorSpaceGains& gains,
+                                     core::Mat& output) {
+  // Ensure output Mat has correct dimensions
+  if (output.rows() != static_cast<size_t>(h) ||
+      output.cols() != static_cast<size_t>(w) || output.channels() != 3) {
+    output = core::Mat(h, w, 3);
+  }
+
   const int n = w * h;
   const std::uint8_t* s = src;
-  float* d = out_rgb.data();
+  float* d = output.data();
+
   for (int i = 0; i < n; i += 2) {
     int y0 = s[0];
     int u = s[1] - 128;
@@ -30,6 +37,13 @@ core::Mat convert_yuyv_to_rgb_f32(const std::uint8_t* src, int w, int h,
     s += 4;
     d += 6;
   }
+}
+
+core::Mat convert_yuyv_to_rgb_f32(const std::uint8_t* src, int w, int h,
+                                  const ColorSpaceGains& gains) {
+  core::Mat out_rgb(h, w, 3);
+  convert_yuyv_to_rgb_f32_inplace(src, w, h, gains, out_rgb);
   return out_rgb;
 }
+
 };  // namespace core::video
