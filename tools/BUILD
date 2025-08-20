@@ -5,8 +5,9 @@ cc_binary(
     ],
     deps=[
         "//core/mat:mat_io",
-        "@gflags//:gflags"
-    ]
+        "@gflags//:gflags",
+        "@onnxruntime//:onnxruntime",
+    ],
 )
 
 cc_binary(
