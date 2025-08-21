@@ -6,15 +6,25 @@
 
 namespace core {
 
-Mat::Mat() noexcept : data_ptr_(nullptr), rows_(0), cols_(0), channels_(0) {};
+Mat::Mat() noexcept : data_ptr_(nullptr), shape_{0, 0, 0} {};
+
+Mat::Mat(const MatShape shape, const std::optional<float> value,
+         const std::optional<MatLayout> layout) noexcept
+    : data_ptr_(
+          std::make_unique<float[]>(shape.rows * shape.cols * shape.channels)),
+      shape_(shape),
+      layout_(layout.value_or(MatLayout::HWC)) {
+  if (value) {
+    std::fill(data_ptr_.get(), data_ptr_.get() + size(), *value);
+  }
+  index_fn_ = (layout_ == MatLayout::CHW) ? chw_index : hwc_index;
+}
 
 Mat::Mat(const size_t rows, const size_t cols, const size_t channels,
          const std::optional<float> value,
          const std::optional<MatLayout> layout) noexcept
     : data_ptr_(std::make_unique<float[]>(rows * cols * channels)),
-      rows_(rows),
-      cols_(cols),
-      channels_(channels),
+      shape_{rows, cols, channels},
       layout_(layout.value_or(MatLayout::HWC)) {
   if (value) {
     std::fill(data_ptr_.get(), data_ptr_.get() + size(), *value);
@@ -24,18 +34,14 @@ Mat::Mat(const size_t rows, const size_t cols, const size_t channels,
 
 Mat::Mat(const Mat& other)
     : data_ptr_(std::make_unique<float[]>(other.size())),
-      rows_(other.rows_),
-      cols_(other.cols_),
-      channels_(other.channels_),
+      shape_(other.shape_),
       layout_(other.layout_) {
   std::copy(other.data(), other.data() + size(), data());
 }
 
 Mat& Mat::operator=(const Mat& other) {
   if (this != &other) {
-    rows_ = other.rows_;
-    cols_ = other.cols_;
-    channels_ = other.channels_;
+    shape_ = other.shape_;
     layout_ = other.layout_;
     data_ptr_ = std::make_unique<float[]>(other.size());
     std::copy(other.data(), other.data() + size(), data());
@@ -44,7 +50,7 @@ Mat& Mat::operator=(const Mat& other) {
 }
 
 Mat Mat::clone() const noexcept {
-  Mat copy(rows_, cols_, channels_, std::nullopt, layout_);
+  Mat copy(shape_, std::nullopt, layout_);
   std::copy(data(), data() + size(), copy.data());
   return copy;
 }
@@ -54,10 +60,10 @@ Mat Mat::to_layout(MatLayout target_layout) const noexcept {
     return clone();
   }
 
-  Mat result(rows_, cols_, channels_, std::nullopt, target_layout);
-  for (size_t r = 0; r < rows_; ++r) {
-    for (size_t c = 0; c < cols_; ++c) {
-      for (size_t ch = 0; ch < channels_; ++ch) {
+  Mat result(shape_, std::nullopt, target_layout);
+  for (size_t r = 0; r < shape_.rows; ++r) {
+    for (size_t c = 0; c < shape_.cols; ++c) {
+      for (size_t ch = 0; ch < shape_.channels; ++ch) {
         result(r, c, ch) = (*this)(r, c, ch);
       }
     }
@@ -66,8 +72,8 @@ Mat Mat::to_layout(MatLayout target_layout) const noexcept {
 }
 
 bool Mat::operator==(const Mat& other) const {
-  if (rows_ != other.rows_ || cols_ != other.cols_ ||
-      channels_ != other.channels_) {
+  if (shape_.rows != other.shape_.rows || shape_.cols != other.shape_.cols ||
+      shape_.channels != other.shape_.channels) {
     return false;
   }
   // consider different layout to be equal if values are the same
@@ -78,9 +84,9 @@ bool Mat::operator==(const Mat& other) const {
       }
     }
   } else {
-    for (size_t r = 0; r < rows_; ++r) {
-      for (size_t c = 0; c < cols_; ++c) {
-        for (size_t ch = 0; ch < channels_; ++ch) {
+    for (size_t r = 0; r < shape_.rows; ++r) {
+      for (size_t c = 0; c < shape_.cols; ++c) {
+        for (size_t ch = 0; ch < shape_.channels; ++ch) {
           if (!approx_equal((*this)(r, c, ch), other(r, c, ch))) {
             return false;
           }
@@ -92,7 +98,7 @@ bool Mat::operator==(const Mat& other) const {
 }
 
 Mat Mat::operator*(const float scalar) const noexcept {
-  Mat result(rows_, cols_, channels_);
+  Mat result(shape_);
   for (size_t i = 0; i < size(); ++i) {
     result.data()[i] = data()[i] * scalar;
   }
@@ -100,7 +106,7 @@ Mat Mat::operator*(const float scalar) const noexcept {
 }
 
 Mat Mat::operator/(const float scalar) const noexcept {
-  Mat result(rows_, cols_, channels_);
+  Mat result(shape_);
   for (size_t i = 0; i < size(); ++i) {
     result.data()[i] = data()[i] / scalar;
   }
@@ -108,7 +114,7 @@ Mat Mat::operator/(const float scalar) const noexcept {
 }
 
 Mat Mat::operator+(const float scalar) const noexcept {
-  Mat result(rows_, cols_, channels_);
+  Mat result(shape_);
   for (size_t i = 0; i < size(); ++i) {
     result.data()[i] = data()[i] + scalar;
   }
@@ -116,7 +122,7 @@ Mat Mat::operator+(const float scalar) const noexcept {
 }
 
 Mat Mat::operator-(const float scalar) const noexcept {
-  Mat result(rows_, cols_, channels_);
+  Mat result(shape_);
   for (size_t i = 0; i < size(); ++i) {
     result.data()[i] = data()[i] - scalar;
   }

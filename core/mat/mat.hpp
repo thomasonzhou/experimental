@@ -23,6 +23,12 @@ enum class MatError {
 
 enum class MatLayout { HWC, CHW };
 
+struct MatShape {
+  size_t rows;
+  size_t cols;
+  size_t channels;
+};
+
 static constexpr bool approx_equal(const float a, const float b,
                                    const float epsilon = 1e-6f) {
   return std::fabs(a - b) < epsilon;
@@ -31,6 +37,8 @@ static constexpr bool approx_equal(const float a, const float b,
 class Mat {
  public:
   Mat() noexcept;
+  Mat(const MatShape shape, const std::optional<float> value = std::nullopt,
+      const std::optional<MatLayout> layout = std::nullopt) noexcept;
   Mat(const size_t rows, const size_t cols, const size_t channels,
       const std::optional<float> value = std::nullopt,
       const std::optional<MatLayout> layout = std::nullopt) noexcept;
@@ -44,12 +52,15 @@ class Mat {
 
   [[nodiscard]] Mat clone() const noexcept;
 
-  [[nodiscard]] constexpr size_t rows() const noexcept { return rows_; }
-  [[nodiscard]] constexpr size_t cols() const noexcept { return cols_; }
-  [[nodiscard]] constexpr size_t channels() const noexcept { return channels_; }
-  [[nodiscard]] constexpr size_t size() const noexcept {
-    return rows_ * cols_ * channels_;
+  [[nodiscard]] constexpr size_t rows() const noexcept { return shape_.rows; }
+  [[nodiscard]] constexpr size_t cols() const noexcept { return shape_.cols; }
+  [[nodiscard]] constexpr size_t channels() const noexcept {
+    return shape_.channels;
   }
+  [[nodiscard]] constexpr size_t size() const noexcept {
+    return shape_.rows * shape_.cols * shape_.channels;
+  }
+  [[nodiscard]] constexpr MatShape shape() const noexcept { return shape_; }
   [[nodiscard]] constexpr MatLayout layout() const noexcept { return layout_; }
 
   [[nodiscard]] float* data() noexcept { return data_ptr_.get(); }
@@ -57,12 +68,13 @@ class Mat {
 
   [[nodiscard]] constexpr bool oob(size_t row, size_t col,
                                    size_t channel) const noexcept {
-    return row >= rows_ || col >= cols_ || channel >= channels_;
+    return row >= shape_.rows || col >= shape_.cols ||
+           channel >= shape_.channels;
   }
 
   [[nodiscard]] size_t calculate_index(size_t row, size_t col,
                                        size_t channel) const noexcept {
-    return index_fn_(row, col, channel, rows_, cols_, channels_);
+    return index_fn_(row, col, channel, shape_);
   }
 
   [[nodiscard]] Mat to_layout(MatLayout target_layout) const noexcept;
@@ -100,14 +112,14 @@ class Mat {
   }
   [[nodiscard]] std::expected<std::reference_wrapper<float>, MatError> at(
       const size_t row, const size_t col) {
-    if (channels_ != 1) {
+    if (shape_.channels != 1) {
       return std::unexpected(MatError::InvalidChannelsForOperation);
     }
     return at(row, col, 0);
   }
   [[nodiscard]] std::expected<float, MatError> at(const size_t row,
                                                   const size_t col) const {
-    if (channels_ != 1) {
+    if (shape_.channels != 1) {
       return std::unexpected(MatError::InvalidChannelsForOperation);
     }
     return at(row, col, 0);
@@ -147,21 +159,20 @@ class Mat {
   // DON'T CROSS THIS LINE (•̀ᴗ•́)و ̑̑
  private:
   std::unique_ptr<float[]> data_ptr_;
-  size_t rows_, cols_, channels_;
+  MatShape shape_;
   MatLayout layout_;
 
-  static size_t hwc_index(size_t row, size_t col, size_t channel, size_t rows,
-                          size_t cols, size_t channels) noexcept {
-    return row * cols * channels + col * channels + channel;
+  static size_t hwc_index(size_t row, size_t col, size_t channel,
+                          const MatShape& shape) noexcept {
+    return row * shape.cols * shape.channels + col * shape.channels + channel;
   }
-  static size_t chw_index(size_t row, size_t col, size_t channel, size_t rows,
-                          size_t cols, size_t channels) noexcept {
-    return channel * rows * cols + row * cols + col;
+  static size_t chw_index(size_t row, size_t col, size_t channel,
+                          const MatShape& shape) noexcept {
+    return channel * shape.rows * shape.cols + row * shape.cols + col;
   }
 
   using IndexFunction = size_t (*)(size_t row, size_t col, size_t channel,
-                                   size_t rows, size_t cols,
-                                   size_t channels) noexcept;
+                                   const MatShape& shape) noexcept;
   IndexFunction index_fn_ = &Mat::hwc_index;
 };
 
