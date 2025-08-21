@@ -9,10 +9,10 @@ CUDAModel::CUDAModel(const std::string& model_path,
     : model_path_(model_path),
       device_id_(device_id.value_or(0)),
       env_(ORT_LOGGING_LEVEL_WARNING, "CUDAModel"),
+      api_(Ort::GetApi()),
       session_(nullptr),
       info_cuda_(nullptr),
-      cuda_alloc_(nullptr),
-      api_(Ort::GetApi()) {
+      cuda_alloc_(nullptr) {
   if (model_path.empty()) {
     LOG(FATAL) << "Model path is empty";
   }

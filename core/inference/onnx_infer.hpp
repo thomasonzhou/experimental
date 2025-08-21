@@ -31,7 +31,8 @@ struct CudaMemoryDeleter {
 
 class CUDAModel {
  public:
-  CUDAModel(const std::string& model_path, std::optional<int> device_id);
+  CUDAModel(const std::string& model_path,
+            std::optional<int> device_id = std::nullopt);
   void infer_inplace(const core::Mat& input, core::Mat& output);
   inline core::Mat infer(const core::Mat& input) {
     core::Mat output(input.shape());

@@ -7,7 +7,6 @@ cc_binary(
         "//core/mat:mat_io",
         "@gflags//:gflags",
         "@abseil-cpp//absl/log:log",
-        "@abseil-cpp//absl/strings:strings",
         "//core/inference:onnx_infer",
     ],
 )
