@@ -21,6 +21,8 @@ enum class MatError {
   WriteImageFailed,
 };
 
+enum class MatLayout { HWC, CHW };
+
 static constexpr bool approx_equal(const float a, const float b,
                                    const float epsilon = 1e-6f) {
   return std::fabs(a - b) < epsilon;
@@ -30,7 +32,8 @@ class Mat {
  public:
   Mat() noexcept;
   Mat(const size_t rows, const size_t cols, const size_t channels,
-      const std::optional<float> value = std::nullopt) noexcept;
+      const std::optional<float> value = std::nullopt,
+      const std::optional<MatLayout> layout = std::nullopt) noexcept;
 
   // rule of five
   ~Mat() = default;
@@ -47,18 +50,22 @@ class Mat {
   [[nodiscard]] constexpr size_t size() const noexcept {
     return rows_ * cols_ * channels_;
   }
+  [[nodiscard]] constexpr MatLayout layout() const noexcept { return layout_; }
 
   [[nodiscard]] float* data() noexcept { return data_ptr_.get(); }
   [[nodiscard]] const float* data() const noexcept { return data_ptr_.get(); }
 
-  [[nodiscard]] constexpr size_t calculate_index(int row, int col,
-                                                 int channel) const noexcept {
-    return row * cols_ * channels_ + col * channels_ + channel;
-  }
   [[nodiscard]] constexpr bool oob(size_t row, size_t col,
                                    size_t channel) const noexcept {
     return row >= rows_ || col >= cols_ || channel >= channels_;
   }
+
+  [[nodiscard]] size_t calculate_index(size_t row, size_t col,
+                                       size_t channel) const noexcept {
+    return index_fn_(row, col, channel, rows_, cols_, channels_);
+  }
+
+  [[nodiscard]] Mat to_layout(MatLayout target_layout) const noexcept;
 
   // unsafe direct access (no bounds checking)
   float& operator()(const size_t row, const size_t col) noexcept {
@@ -141,6 +148,21 @@ class Mat {
  private:
   std::unique_ptr<float[]> data_ptr_;
   size_t rows_, cols_, channels_;
+  MatLayout layout_;
+
+  static size_t hwc_index(size_t row, size_t col, size_t channel, size_t rows,
+                          size_t cols, size_t channels) noexcept {
+    return row * cols * channels + col * channels + channel;
+  }
+  static size_t chw_index(size_t row, size_t col, size_t channel, size_t rows,
+                          size_t cols, size_t channels) noexcept {
+    return channel * rows * cols + row * cols + col;
+  }
+
+  using IndexFunction = size_t (*)(size_t row, size_t col, size_t channel,
+                                   size_t rows, size_t cols,
+                                   size_t channels) noexcept;
+  IndexFunction index_fn_ = &Mat::hwc_index;
 };
 
 [[nodiscard]] Mat operator*(const float scalar, const Mat& mat) noexcept;

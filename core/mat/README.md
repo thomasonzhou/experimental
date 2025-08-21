@@ -21,12 +21,9 @@ Some design decisions:
 - control refresh rate of each node by dragging slider
 - profile inference time
 
-- onnx
-- tensorrt
 
 - rerun
 
-- v4l2
 
 - mujoco
 

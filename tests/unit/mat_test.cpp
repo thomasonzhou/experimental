@@ -86,6 +86,92 @@ TEST_CASE("Mat helper functions and edge cases", "[mat]") {
   REQUIRE(large(0, 0) == 1e6f);
 }
 
+TEST_CASE("Mat layout memory verification", "[mat]") {
+  Mat hwc(2, 2, 2, 0.0f, MatLayout::HWC);
+  Mat chw(2, 2, 2, 0.0f, MatLayout::CHW);
+
+  hwc(0, 0, 0) = 1.0f;
+  hwc(0, 0, 1) = 2.0f;
+  hwc(0, 1, 0) = 3.0f;
+  hwc(1, 0, 0) = 4.0f;
+
+  chw(0, 0, 0) = 1.0f;
+  chw(0, 0, 1) = 2.0f;
+  chw(0, 1, 0) = 3.0f;
+  chw(1, 0, 0) = 4.0f;
+
+  REQUIRE(hwc.layout() == MatLayout::HWC);
+  REQUIRE(chw.layout() == MatLayout::CHW);
+
+  REQUIRE(hwc == chw);
+
+  const float *hwc_data = hwc.data();
+  const float *chw_data = chw.data();
+
+  REQUIRE(hwc_data[0] == 1.0f);  // 0,0,0
+  REQUIRE(hwc_data[1] == 2.0f);  // 0,0,1
+  REQUIRE(hwc_data[2] == 3.0f);  // 0,1,0
+  REQUIRE(hwc_data[3] == 0.0f);  // 0,1,1
+  REQUIRE(hwc_data[4] == 4.0f);  // 1,0,0
+
+  REQUIRE(chw_data[0] == 1.0f);  // 0, 0, 0
+  REQUIRE(chw_data[1] == 3.0f);  // 0, 0, 1
+  REQUIRE(chw_data[2] == 4.0f);  // 0, 1, 0
+  REQUIRE(chw_data[3] == 0.0f);  // 0, 1, 1
+  REQUIRE(chw_data[4] == 2.0f);  // 1, 0, 0
+
+  bool layouts_different = false;
+  for (size_t i = 0; i < hwc.size(); ++i) {
+    if (hwc_data[i] != chw_data[i]) {
+      layouts_different = true;
+      break;
+    }
+  }
+  REQUIRE(layouts_different);
+}
+
+TEST_CASE("Mat layout conversion", "[mat]") {
+  Mat hwc(2, 4, 3, 0.0f, MatLayout::HWC);
+  Mat chw(2, 4, 3, 0.0f, MatLayout::CHW);
+  hwc(1, 2, 2) = 1.0f;
+  chw(1, 2, 2) = 1.0f;
+
+  REQUIRE(hwc.layout() == MatLayout::HWC);
+  REQUIRE(chw.layout() == MatLayout::CHW);
+
+  REQUIRE(hwc == chw);
+  Mat hwc_from_chw = chw.to_layout(MatLayout::HWC);
+  REQUIRE(hwc_from_chw == chw);
+  REQUIRE(hwc_from_chw.layout() == MatLayout::HWC);
+
+  // Test no-op conversion
+  Mat chw_from_chw = chw.to_layout(MatLayout::CHW);
+  REQUIRE(chw_from_chw == chw);
+  REQUIRE(chw_from_chw.layout() == MatLayout::CHW);
+}
+
+TEST_CASE("Mat layout access patterns", "[mat]") {
+  Mat hwc(3, 4, 2, 0.0f, MatLayout::HWC);
+  Mat chw(3, 4, 2, 0.0f, MatLayout::CHW);
+
+  for (size_t r = 0; r < 3; ++r) {
+    for (size_t c = 0; c < 4; ++c) {
+      for (size_t ch = 0; ch < 2; ++ch) {
+        float value = r * 100 + c * 10 + ch;
+        hwc(r, c, ch) = value;
+        chw(r, c, ch) = value;
+      }
+    }
+  }
+
+  REQUIRE(hwc == chw);
+
+  REQUIRE(hwc(2, 3, 1) == 231.0f);  // 2*100 + 3*10 + 1 = 231
+  REQUIRE(chw(2, 3, 1) == 231.0f);
+  REQUIRE(hwc(0, 0, 0) == 0.0f);
+  REQUIRE(chw(0, 0, 0) == 0.0f);
+}
+
 TEST_CASE("Mat proto serialization and deserialization", "[mat][proto]") {
   Mat original(2, 3, 2, 0.0f);
   original(0, 0, 0) = 1.5f;
