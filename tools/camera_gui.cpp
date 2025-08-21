@@ -4,6 +4,7 @@
 #include <memory>
 #include <stdexcept>
 
+#include "core/inference/onnx_infer.hpp"
 #include "core/video/v4l2/v4l2_camera.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -77,6 +78,18 @@ int main(int, char**) {
     fprintf(stderr, "Camera init failed: %s\n", e.what());
   }
 
+  core::inference::onnx::CUDAModel model(
+      "/home/thchzh/src/experimental/weights/moge-2-vits-normal.onnx");
+  core::Mat model_output;
+  bool model_output_initialized = false;
+  unsigned int model_tex = 1;
+  glGenTextures(1, &model_tex);
+  glBindTexture(GL_TEXTURE_2D, model_tex);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, cam_w, cam_h, 0, GL_RGB, GL_FLOAT,
+               nullptr);
+
   // Main loop
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
@@ -87,11 +100,12 @@ int main(int, char**) {
     ImGui::NewFrame();
 
     if (camera) {
+      std::optional<std::reference_wrapper<const core::Mat>> cam_rgb;
       if (auto rgb_opt = camera->try_grab_rgb()) {
-        const core::Mat& cam_rgb = rgb_opt.value();
+        cam_rgb = rgb_opt.value();
         glBindTexture(GL_TEXTURE_2D, cam_tex);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, cam_w, cam_h, GL_RGB, GL_FLOAT,
-                        cam_rgb.data());
+                        cam_rgb->get().data());
       }
 
       ImGui::Begin("Camera Feed");
@@ -101,6 +115,25 @@ int main(int, char**) {
                      ImVec2((float)cam_w, (float)cam_h));
       }
       ImGui::Text("%.1f FPS", io.Framerate);
+      ImGui::End();
+
+      ImGui::Begin("Camera Inference");
+
+      if (model_tex != 0 && cam_rgb) {
+        if (!model_output_initialized) {
+          model_output = core::Mat(cam_rgb->get().shape());
+          model_output_initialized = true;
+        }
+        model.infer_inplace(cam_rgb->get(), model_output);
+
+        glBindTexture(GL_TEXTURE_2D, model_tex);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, cam_w, cam_h, GL_RGB, GL_FLOAT,
+                        model_output.data());
+
+        ImGui::Image((ImTextureID)(intptr_t)model_tex,
+                     ImVec2((float)cam_w, (float)cam_h));
+      }
+
       ImGui::End();
     }
 

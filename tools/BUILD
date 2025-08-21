@@ -18,6 +18,7 @@ cc_binary(
     ],
     deps=[
         "//third_party/imgui:imgui_glfw_opengl3",
-        "//core/video/v4l2:v4l2_camera"
+        "//core/video/v4l2:v4l2_camera",
+        "//core/inference:onnx_infer"
     ]
 )
