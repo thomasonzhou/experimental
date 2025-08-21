@@ -6,7 +6,11 @@ cc_binary(
     deps=[
         "//core/mat:mat_io",
         "@gflags//:gflags",
-        "@onnxruntime//:onnxruntime",
+        "@onnxruntime_gpu//:onnxruntime_gpu",
+        "//core/inference:onnx_utils",
+        "@abseil-cpp//absl/log:log",
+        "@abseil-cpp//absl/strings:strings",
+        "@rules_cuda//cuda:runtime"
     ],
 )
 

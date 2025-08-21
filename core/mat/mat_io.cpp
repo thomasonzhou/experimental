@@ -78,12 +78,12 @@ std::expected<Mat, MatError> imread(const std::string &filename,
   } else {
     for (size_t r = 0; r < mat.rows(); ++r) {
       for (size_t c = 0; c < mat.cols(); ++c) {
-        mat(r, c, 0) =
-            static_cast<float>(img_data[(c * 3 + 0) * rows + r]) / 255.0f;
-        mat(r, c, 1) =
-            static_cast<float>(img_data[(c * 3 + 1) * rows + r]) / 255.0f;
-        mat(r, c, 2) =
-            static_cast<float>(img_data[(c * 3 + 2) * rows + r]) / 255.0f;
+        for (size_t ch = 0; ch < mat.channels(); ++ch) {
+          mat(r, c, ch) =
+              static_cast<float>(
+                  img_data[(r * mat.cols() + c) * mat.channels() + ch]) /
+              255.0f;
+        }
       }
     }
   }
