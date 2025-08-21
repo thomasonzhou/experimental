@@ -10,11 +10,15 @@
 #include "core/mat/mat.pb.h"
 
 namespace core {
+[[nodiscard]] ::core::v1::MatLayout to_proto(const MatLayout layout) noexcept;
 [[nodiscard]] ::core::v1::Mat to_proto(const Mat &mat) noexcept;
+[[nodiscard]] MatLayout from_proto(const ::core::v1::MatLayout layout) noexcept;
 [[nodiscard]] std::expected<Mat, MatError> from_proto(
     const ::core::v1::Mat &proto);
 
-[[nodiscard]] std::expected<Mat, MatError> imread(const std::string &filename);
+[[nodiscard]] std::expected<Mat, MatError> imread(
+    const std::string &filename,
+    const std::optional<MatLayout> layout = std::nullopt);
 [[nodiscard]] std::expected<void, MatError> imwrite(const std::string &filename,
                                                     const Mat &mat);
 [[nodiscard]] Mat ones(const size_t rows, const size_t cols,

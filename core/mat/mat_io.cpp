@@ -7,19 +7,43 @@
 
 namespace core {
 
+::core::v1::MatLayout to_proto(const MatLayout layout) noexcept {
+  switch (layout) {
+    case MatLayout::HWC:
+      return ::core::v1::MatLayout::MAT_LAYOUT_HWC;
+    case MatLayout::CHW:
+      return ::core::v1::MatLayout::MAT_LAYOUT_CHW;
+    default:
+      return ::core::v1::MatLayout::MAT_LAYOUT_UNSPECIFIED;
+  }
+}
+
 ::core::v1::Mat to_proto(const Mat &mat) noexcept {
   ::core::v1::Mat proto;
   proto.set_rows(mat.rows());
   proto.set_cols(mat.cols());
   proto.set_channels(mat.channels());
+  proto.set_layout(to_proto(mat.layout()));
 
   auto bytes = std::as_bytes(std::span<const float>(mat.data(), mat.size()));
   proto.set_data(bytes.data(), static_cast<int>(bytes.size()));
   return proto;
 }
 
+MatLayout from_proto(const ::core::v1::MatLayout layout) noexcept {
+  switch (layout) {
+    case ::core::v1::MatLayout::MAT_LAYOUT_HWC:
+      return MatLayout::HWC;
+    case ::core::v1::MatLayout::MAT_LAYOUT_CHW:
+      return MatLayout::CHW;
+    default:
+      return MatLayout::HWC;
+  }
+}
+
 std::expected<Mat, MatError> from_proto(const ::core::v1::Mat &proto) {
-  Mat mat(proto.rows(), proto.cols(), proto.channels());
+  Mat mat(proto.rows(), proto.cols(), proto.channels(), std::nullopt,
+          from_proto(proto.layout()));
 
   const std::string &byte_data = proto.data();
   if (byte_data.size() != mat.size() * sizeof(float)) {
@@ -29,7 +53,8 @@ std::expected<Mat, MatError> from_proto(const ::core::v1::Mat &proto) {
   return mat;
 }
 
-std::expected<Mat, MatError> imread(const std::string &filename) {
+std::expected<Mat, MatError> imread(const std::string &filename,
+                                    std::optional<MatLayout> layout) {
   if (filename.empty()) {
     return std::unexpected(MatError::InvalidFilename);
   }
@@ -44,10 +69,23 @@ std::expected<Mat, MatError> imread(const std::string &filename) {
   }
 
   Mat mat(static_cast<size_t>(rows), static_cast<size_t>(cols),
-          static_cast<size_t>(channels));
+          static_cast<size_t>(channels), std::nullopt, layout);
 
-  for (size_t i = 0; i < mat.size(); ++i) {
-    mat.data()[i] = static_cast<float>(img_data[i]) / 255.0f;
+  if (mat.layout() == MatLayout::HWC) {
+    for (size_t i = 0; i < mat.size(); ++i) {
+      mat.data()[i] = static_cast<float>(img_data[i]) / 255.0f;
+    }
+  } else {
+    for (size_t r = 0; r < mat.rows(); ++r) {
+      for (size_t c = 0; c < mat.cols(); ++c) {
+        mat(r, c, 0) =
+            static_cast<float>(img_data[(c * 3 + 0) * rows + r]) / 255.0f;
+        mat(r, c, 1) =
+            static_cast<float>(img_data[(c * 3 + 1) * rows + r]) / 255.0f;
+        mat(r, c, 2) =
+            static_cast<float>(img_data[(c * 3 + 2) * rows + r]) / 255.0f;
+      }
+    }
   }
 
   stbi_image_free(img_data);
@@ -66,9 +104,22 @@ std::expected<void, MatError> imwrite(const std::string &filename,
 
   std::unique_ptr<unsigned char[]> scaled =
       std::make_unique<unsigned char[]>(sizeof(unsigned char) * mat.size());
-  for (size_t i = 0; i < mat.size(); ++i) {
-    scaled[i] = static_cast<unsigned char>(
-        std::clamp(mat.data()[i], 0.0f, 1.0f) * 255.0f);
+
+  if (mat.layout() == MatLayout::HWC) {
+    for (size_t i = 0; i < mat.size(); ++i) {
+      scaled[i] = static_cast<unsigned char>(
+          std::clamp(mat.data()[i], 0.0f, 1.0f) * 255.0f);
+    }
+  } else {
+    for (size_t r = 0; r < mat.rows(); ++r) {
+      for (size_t c = 0; c < mat.cols(); ++c) {
+        for (size_t ch = 0; ch < mat.channels(); ++ch) {
+          scaled[(r * mat.cols() + c) * mat.channels() + ch] =
+              static_cast<unsigned char>(std::clamp(mat(r, c, ch), 0.0f, 1.0f) *
+                                         255.0f);
+        }
+      }
+    }
   }
 
   int result = stbi_write_png(filename.c_str(), mat.cols(), mat.rows(),
