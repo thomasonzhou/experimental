@@ -53,6 +53,7 @@ int main(int, char**) {
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
+  // webcamera
   std::unique_ptr<core::video::v4l2::Camera> camera;
   unsigned int cam_tex = 0;
   int cam_w = 0, cam_h = 0;
@@ -79,11 +80,38 @@ int main(int, char**) {
     fprintf(stderr, "Camera init failed: %s\n", e.what());
   }
 
+  // realsense 405
+  std::unique_ptr<core::video::v4l2::Camera> realsense_camera;
+  unsigned int realsense_tex = 1;
+  int realsense_w = 0, realsense_h = 0;
+
+  try {
+    core::video::v4l2::Config config;
+    config.device = "/dev/video8";
+    config.width = 640;
+    config.height = 480;
+    config.fps = 30;
+    config.pixfmt = V4L2_PIX_FMT_YUYV;
+
+    realsense_camera = std::make_unique<core::video::v4l2::Camera>(config);
+    realsense_w = realsense_camera->width();
+    realsense_h = realsense_camera->height();
+
+    glGenTextures(1, &realsense_tex);
+    glBindTexture(GL_TEXTURE_2D, realsense_tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, realsense_w, realsense_h, 0, GL_RGB,
+                 GL_FLOAT, nullptr);
+  } catch (const std::exception& e) {
+    fprintf(stderr, "Camera init failed: %s\n", e.what());
+  }
+
   core::inference::onnx::CUDAModel model(
       "/home/thchzh/src/experimental/weights/moge-2-vits-normal.onnx");
   core::Mat model_output;
   bool model_output_initialized = false;
-  unsigned int model_tex = 1;
+  unsigned int model_tex = 2;
   glGenTextures(1, &model_tex);
   glBindTexture(GL_TEXTURE_2D, model_tex);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -92,8 +120,10 @@ int main(int, char**) {
                nullptr);
 
   int video_fps = 30;
+  int video2_fps = 30;
   int inference_fps = 5;
-  auto last_video_time = std::chrono::steady_clock::now();
+  auto last_video1_time = std::chrono::steady_clock::now();
+  auto last_video2_time = std::chrono::steady_clock::now();
   auto last_inference_time = std::chrono::steady_clock::now();
 
   // Main loop
@@ -111,11 +141,14 @@ int main(int, char**) {
       auto inference_interval =
           std::chrono::duration<float>(1.0f / inference_fps);
 
-      bool should_update_video =
-          (current_time - last_video_time) >= video_interval;
+      bool should_update_video1 =
+          (current_time - last_video1_time) >= video_interval;
+      bool should_update_video2 =
+          (current_time - last_video2_time) >= video_interval;
       bool should_run_inference =
           (current_time - last_inference_time) >= inference_interval;
 
+      // webcam
       std::optional<std::reference_wrapper<const core::Mat>> cam_rgb;
 
       // Always grab the latest frame for potential use
@@ -123,11 +156,11 @@ int main(int, char**) {
         cam_rgb = rgb_opt.value();
 
         // Update video texture only at the specified video frame rate
-        if (should_update_video) {
+        if (should_update_video1) {
           glBindTexture(GL_TEXTURE_2D, cam_tex);
           glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, cam_w, cam_h, GL_RGB,
                           GL_FLOAT, cam_rgb->get().data());
-          last_video_time = current_time;
+          last_video1_time = current_time;
         }
       }
 
@@ -141,6 +174,35 @@ int main(int, char**) {
       ImGui::Text("%.1f FPS", io.Framerate);
       ImGui::Separator();
       ImGui::SliderInt("Video FPS", &video_fps, 1, 20, "%d");
+      ImGui::End();
+
+      // realsense 405
+
+      std::optional<std::reference_wrapper<const core::Mat>> realsense_rgb;
+
+      // Always grab the latest frame for potential use
+      if (auto rgb_opt = realsense_camera->try_grab_rgb()) {
+        realsense_rgb = rgb_opt.value();
+
+        // Update video texture only at the specified video frame rate
+        if (should_update_video2) {
+          glBindTexture(GL_TEXTURE_2D, realsense_tex);
+          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, realsense_w, realsense_h,
+                          GL_RGB, GL_FLOAT, realsense_rgb->get().data());
+          last_video1_time = current_time;
+        }
+      }
+
+      ImGui::Begin("Realsense Camera Feed");
+      ImGui::Text("Resolution: %d x %d", realsense_w, realsense_h);
+
+      if (realsense_tex != 0) {
+        ImGui::Image((ImTextureID)(intptr_t)realsense_tex,
+                     ImVec2((float)realsense_w, (float)realsense_h));
+      }
+      ImGui::Text("%.1f FPS", io.Framerate);
+      ImGui::Separator();
+      ImGui::SliderInt("Video FPS", &video2_fps, 1, 20, "%d");
       ImGui::End();
 
       ImGui::Begin("Camera Inference");
