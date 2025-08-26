@@ -91,9 +91,8 @@ int main(int, char**) {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, cam_w, cam_h, 0, GL_RGB, GL_FLOAT,
                nullptr);
 
-  // Timing control variables
-  int video_fps = 30;     // Target video frame rate
-  int inference_fps = 5;  // Target inference frame rate
+  int video_fps = 30;
+  int inference_fps = 5;
   auto last_video_time = std::chrono::steady_clock::now();
   auto last_inference_time = std::chrono::steady_clock::now();
 
@@ -108,8 +107,6 @@ int main(int, char**) {
 
     if (camera) {
       auto current_time = std::chrono::steady_clock::now();
-
-      // Calculate time intervals
       auto video_interval = std::chrono::duration<float>(1.0f / video_fps);
       auto inference_interval =
           std::chrono::duration<float>(1.0f / inference_fps);
@@ -137,8 +134,6 @@ int main(int, char**) {
       ImGui::Begin("Camera Feed");
       ImGui::Text("Resolution: %d x %d", cam_w, cam_h);
 
-      // Timing control sliders
-
       if (cam_tex != 0) {
         ImGui::Image((ImTextureID)(intptr_t)cam_tex,
                      ImVec2((float)cam_w, (float)cam_h));
@@ -164,7 +159,6 @@ int main(int, char**) {
         last_inference_time = current_time;
       }
 
-      // Always display the most recent inference result
       if (model_tex != 0 && model_output_initialized) {
         ImGui::Image((ImTextureID)(intptr_t)model_tex,
                      ImVec2((float)cam_w, (float)cam_h));
