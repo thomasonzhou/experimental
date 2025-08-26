@@ -1,6 +1,7 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 
+#include <chrono>
 #include <memory>
 #include <stdexcept>
 
@@ -90,6 +91,12 @@ int main(int, char**) {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, cam_w, cam_h, 0, GL_RGB, GL_FLOAT,
                nullptr);
 
+  // Timing control variables
+  int video_fps = 30;     // Target video frame rate
+  int inference_fps = 5;  // Target inference frame rate
+  auto last_video_time = std::chrono::steady_clock::now();
+  auto last_inference_time = std::chrono::steady_clock::now();
+
   // Main loop
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
@@ -100,26 +107,50 @@ int main(int, char**) {
     ImGui::NewFrame();
 
     if (camera) {
+      auto current_time = std::chrono::steady_clock::now();
+
+      // Calculate time intervals
+      auto video_interval = std::chrono::duration<float>(1.0f / video_fps);
+      auto inference_interval =
+          std::chrono::duration<float>(1.0f / inference_fps);
+
+      bool should_update_video =
+          (current_time - last_video_time) >= video_interval;
+      bool should_run_inference =
+          (current_time - last_inference_time) >= inference_interval;
+
       std::optional<std::reference_wrapper<const core::Mat>> cam_rgb;
+
+      // Always grab the latest frame for potential use
       if (auto rgb_opt = camera->try_grab_rgb()) {
         cam_rgb = rgb_opt.value();
-        glBindTexture(GL_TEXTURE_2D, cam_tex);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, cam_w, cam_h, GL_RGB, GL_FLOAT,
-                        cam_rgb->get().data());
+
+        // Update video texture only at the specified video frame rate
+        if (should_update_video) {
+          glBindTexture(GL_TEXTURE_2D, cam_tex);
+          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, cam_w, cam_h, GL_RGB,
+                          GL_FLOAT, cam_rgb->get().data());
+          last_video_time = current_time;
+        }
       }
 
       ImGui::Begin("Camera Feed");
       ImGui::Text("Resolution: %d x %d", cam_w, cam_h);
+
+      // Timing control sliders
+
       if (cam_tex != 0) {
         ImGui::Image((ImTextureID)(intptr_t)cam_tex,
                      ImVec2((float)cam_w, (float)cam_h));
       }
       ImGui::Text("%.1f FPS", io.Framerate);
+      ImGui::Separator();
+      ImGui::SliderInt("Video FPS", &video_fps, 1, 20, "%d");
       ImGui::End();
 
       ImGui::Begin("Camera Inference");
 
-      if (model_tex != 0 && cam_rgb) {
+      if (model_tex != 0 && should_run_inference && cam_rgb) {
         if (!model_output_initialized) {
           model_output = core::Mat(cam_rgb->get().shape());
           model_output_initialized = true;
@@ -130,9 +161,16 @@ int main(int, char**) {
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, cam_w, cam_h, GL_RGB, GL_FLOAT,
                         model_output.data());
 
+        last_inference_time = current_time;
+      }
+
+      // Always display the most recent inference result
+      if (model_tex != 0 && model_output_initialized) {
         ImGui::Image((ImTextureID)(intptr_t)model_tex,
                      ImVec2((float)cam_w, (float)cam_h));
       }
+      ImGui::Separator();
+      ImGui::SliderInt("Inference FPS", &inference_fps, 1, 10, "%d");
 
       ImGui::End();
     }
