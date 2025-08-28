@@ -6,15 +6,16 @@ package core.v1;
 
 enum MatLayout {
   MAT_LAYOUT_UNSPECIFIED = 0;
-  MAT_LAYOUT_HWC = 1;
-  MAT_LAYOUT_CHW = 2;
+  MAT_LAYOUT_NHWC = 1;
+  MAT_LAYOUT_NCHW = 2;
 }
 
 message Mat {
   bytes data = 1;
-  uint32 rows = 2;
-  uint32 cols = 3;
-  uint32 channels = 4;
+  uint32 batch_size = 2;
+  uint32 rows = 3;
+  uint32 cols = 4;
+  uint32 channels = 5;
 
-  MatLayout layout = 5;
+  MatLayout layout = 6;
 }

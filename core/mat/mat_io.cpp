@@ -9,10 +9,10 @@ namespace core {
 
 ::core::v1::MatLayout to_proto(const MatLayout layout) noexcept {
   switch (layout) {
-    case MatLayout::HWC:
-      return ::core::v1::MatLayout::MAT_LAYOUT_HWC;
-    case MatLayout::CHW:
-      return ::core::v1::MatLayout::MAT_LAYOUT_CHW;
+    case MatLayout::NHWC:
+      return ::core::v1::MatLayout::MAT_LAYOUT_NHWC;
+    case MatLayout::NCHW:
+      return ::core::v1::MatLayout::MAT_LAYOUT_NCHW;
     default:
       return ::core::v1::MatLayout::MAT_LAYOUT_UNSPECIFIED;
   }
@@ -20,6 +20,7 @@ namespace core {
 
 ::core::v1::Mat to_proto(const Mat &mat) noexcept {
   ::core::v1::Mat proto;
+  proto.set_batch_size(mat.batch_size());
   proto.set_rows(mat.rows());
   proto.set_cols(mat.cols());
   proto.set_channels(mat.channels());
@@ -32,18 +33,19 @@ namespace core {
 
 MatLayout from_proto(const ::core::v1::MatLayout layout) noexcept {
   switch (layout) {
-    case ::core::v1::MatLayout::MAT_LAYOUT_HWC:
-      return MatLayout::HWC;
-    case ::core::v1::MatLayout::MAT_LAYOUT_CHW:
-      return MatLayout::CHW;
+    case ::core::v1::MatLayout::MAT_LAYOUT_NHWC:
+      return MatLayout::NHWC;
+    case ::core::v1::MatLayout::MAT_LAYOUT_NCHW:
+      return MatLayout::NCHW;
     default:
-      return MatLayout::HWC;
+      return MatLayout::NHWC;
   }
 }
 
 std::expected<Mat, MatError> from_proto(const ::core::v1::Mat &proto) {
-  Mat mat(proto.rows(), proto.cols(), proto.channels(), std::nullopt,
-          from_proto(proto.layout()));
+  Mat mat(MatShape::make_4d(proto.batch_size(), proto.rows(), proto.cols(),
+                            proto.channels()),
+          std::nullopt, from_proto(proto.layout()));
 
   const std::string &byte_data = proto.data();
   if (byte_data.size() != mat.size() * sizeof(float)) {
@@ -68,10 +70,12 @@ std::expected<Mat, MatError> imread(const std::string &filename,
     return std::unexpected(MatError::ImageLoadFailed);
   }
 
-  Mat mat(static_cast<size_t>(rows), static_cast<size_t>(cols),
-          static_cast<size_t>(channels), std::nullopt, layout);
+  Mat mat(
+      MatShape::make_3d(static_cast<size_t>(rows), static_cast<size_t>(cols),
+                        static_cast<size_t>(channels)),
+      std::nullopt, layout);
 
-  if (mat.layout() == MatLayout::HWC) {
+  if (mat.layout() == MatLayout::NHWC) {
     for (size_t i = 0; i < mat.size(); ++i) {
       mat.data()[i] = static_cast<float>(img_data[i]) / 255.0f;
     }
@@ -105,7 +109,7 @@ std::expected<void, MatError> imwrite(const std::string &filename,
   std::unique_ptr<unsigned char[]> scaled =
       std::make_unique<unsigned char[]>(sizeof(unsigned char) * mat.size());
 
-  if (mat.layout() == MatLayout::HWC) {
+  if (mat.layout() == MatLayout::NHWC) {
     for (size_t i = 0; i < mat.size(); ++i) {
       scaled[i] = static_cast<unsigned char>(
           std::clamp(mat.data()[i], 0.0f, 1.0f) * 255.0f);
@@ -130,18 +134,16 @@ std::expected<void, MatError> imwrite(const std::string &filename,
   return {};
 }
 
-Mat ones(const size_t rows, const size_t cols, const size_t channels) noexcept {
-  return Mat(rows, cols, channels, 1.0f);
-}
+Mat ones(const MatShape shape) noexcept { return Mat(shape, 1.0f); }
 
-Mat zeros(const size_t rows, const size_t cols,
-          const size_t channels) noexcept {
-  return Mat(rows, cols, channels, 0.0f);
-}
+Mat zeros(const MatShape shape) noexcept { return Mat(shape, 0.0f); }
 
-Mat gaussian(const size_t rows, const size_t cols, const size_t channels,
-             const std::optional<float> sigma_rows,
+Mat gaussian(const MatShape shape, const std::optional<float> sigma_rows,
              const std::optional<float> sigma_cols) noexcept {
+  const size_t rows = shape.rows;
+  const size_t cols = shape.cols;
+  const size_t channels = shape.channels;
+
   const float mean_x = static_cast<float>(cols - 1) / 2.0f;
   const float mean_y = static_cast<float>(rows - 1) / 2.0f;
   constexpr float kDefaultSigmaFactor = 0.25f;
@@ -151,7 +153,7 @@ Mat gaussian(const size_t rows, const size_t cols, const size_t channels,
   const float inv2sx2 = 1.0f / (2.0f * sigma_x * sigma_x);
   const float inv2sy2 = 1.0f / (2.0f * sigma_y * sigma_y);
 
-  Mat mat(rows, cols, channels);
+  Mat mat(shape);
   for (size_t r = 0; r < rows; ++r) {
     for (size_t c = 0; c < cols; ++c) {
       float res_x = static_cast<float>(c) - mean_x;

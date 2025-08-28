@@ -11,7 +11,7 @@ void convert_yuyv_to_rgb_f32_inplace(const std::uint8_t* src, int w, int h,
   // Ensure output Mat has correct dimensions
   if (output.rows() != static_cast<size_t>(h) ||
       output.cols() != static_cast<size_t>(w) || output.channels() != 3) {
-    output = core::Mat(h, w, 3);
+    output = core::Mat(core::MatShape::make_3d(h, w, 3));
   }
 
   const int n = w * h;
@@ -41,7 +41,7 @@ void convert_yuyv_to_rgb_f32_inplace(const std::uint8_t* src, int w, int h,
 
 core::Mat convert_yuyv_to_rgb_f32(const std::uint8_t* src, int w, int h,
                                   const ColorSpaceGains& gains) {
-  core::Mat out_rgb(h, w, 3);
+  core::Mat out_rgb(core::MatShape::make_3d(h, w, 3));
   convert_yuyv_to_rgb_f32_inplace(src, w, h, gains, out_rgb);
   return out_rgb;
 }

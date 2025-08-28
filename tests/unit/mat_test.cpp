@@ -7,7 +7,7 @@
 
 namespace core {
 TEST_CASE("Mat construction and basic properties", "[mat]") {
-  Mat mat(3, 5, 2, 1.5f);
+  Mat mat(MatShape::make_3d(3, 5, 2), 1.5f);
   REQUIRE(mat.rows() == 3);
   REQUIRE(mat.cols() == 5);
   REQUIRE(mat.channels() == 2);
@@ -15,26 +15,26 @@ TEST_CASE("Mat construction and basic properties", "[mat]") {
   REQUIRE(mat(0, 0, 0) == 1.5f);
   REQUIRE(mat(2, 4, 1) == 1.5f);
 
-  Mat tiny(1, 1, 1, 42.0f);
+  Mat tiny(MatShape::make_3d(1, 1, 1), 42.0f);
   REQUIRE(tiny.size() == 1);
   REQUIRE(tiny(0, 0) == 42.0f);
 }
 
 TEST_CASE("Mat element access", "[mat]") {
-  Mat mat(2, 3, 2, 0.0f);
+  Mat mat(MatShape::make_3d(2, 3, 2), 0.0f);
 
   mat(1, 2, 0) = 3.14f;
   mat(1, 2, 1) = 2.71f;
   REQUIRE(mat(1, 2, 0) == 3.14f);
   REQUIRE(mat(1, 2, 1) == 2.71f);
 
-  Mat single(2, 2, 1, 0.0f);
+  Mat single(MatShape::make_3d(2, 2, 1), 0.0f);
   single(1, 1) = 5.0f;
   REQUIRE(single(1, 1) == single(1, 1, 0));
 }
 
 TEST_CASE("Mat cloning and equality", "[mat]") {
-  Mat original(2, 2, 1, 1.0f);
+  Mat original(MatShape::make_3d(2, 2, 1), 1.0f);
   original(0, 0) = 42.0f;
 
   Mat cloned = original.clone();
@@ -45,12 +45,12 @@ TEST_CASE("Mat cloning and equality", "[mat]") {
   REQUIRE(cloned(0, 0) == 99.0f);
   REQUIRE(original != cloned);
 
-  Mat different(2, 3, 1, 1.0f);
+  Mat different(MatShape::make_3d(2, 3, 1), 1.0f);
   REQUIRE(original != different);
 }
 
 TEST_CASE("Mat arithmetic operations", "[mat]") {
-  Mat base(2, 2, 1, 0.0f);
+  Mat base(MatShape::make_3d(2, 2, 1), 0.0f);
   base(0, 0) = 1.0f;
   base(0, 1) = 2.0f;
   base(1, 0) = 3.0f;
@@ -78,17 +78,17 @@ TEST_CASE("Mat helper functions and edge cases", "[mat]") {
   REQUIRE(zeros_mat(0, 0, 0) == 0.0f);
   REQUIRE(ones_mat(1, 2, 1) == 1.0f);
 
-  Mat negative(1, 1, 1, -5.0f);
-  Mat tiny(1, 1, 1, 1e-6f);
-  Mat large(1, 1, 1, 1e6f);
+  Mat negative(MatShape::make_3d(1, 1, 1), -5.0f);
+  Mat tiny(MatShape::make_3d(1, 1, 1), 1e-6f);
+  Mat large(MatShape::make_3d(1, 1, 1), 1e6f);
   REQUIRE(negative(0, 0) == -5.0f);
   REQUIRE(tiny(0, 0) == 1e-6f);
   REQUIRE(large(0, 0) == 1e6f);
 }
 
 TEST_CASE("Mat layout memory verification", "[mat]") {
-  Mat hwc(2, 2, 2, 0.0f, MatLayout::HWC);
-  Mat chw(2, 2, 2, 0.0f, MatLayout::CHW);
+  Mat hwc(MatShape::make_3d(2, 2, 2), 0.0f, MatLayout::NHWC);
+  Mat chw(MatShape::make_3d(2, 2, 2), 0.0f, MatLayout::NCHW);
 
   hwc(0, 0, 0) = 1.0f;
   hwc(0, 0, 1) = 2.0f;
@@ -100,8 +100,8 @@ TEST_CASE("Mat layout memory verification", "[mat]") {
   chw(0, 1, 0) = 3.0f;
   chw(1, 0, 0) = 4.0f;
 
-  REQUIRE(hwc.layout() == MatLayout::HWC);
-  REQUIRE(chw.layout() == MatLayout::CHW);
+  REQUIRE(hwc.layout() == MatLayout::NHWC);
+  REQUIRE(chw.layout() == MatLayout::NCHW);
 
   REQUIRE(hwc == chw);
 
@@ -131,28 +131,28 @@ TEST_CASE("Mat layout memory verification", "[mat]") {
 }
 
 TEST_CASE("Mat layout conversion", "[mat]") {
-  Mat hwc(2, 4, 3, 0.0f, MatLayout::HWC);
-  Mat chw(2, 4, 3, 0.0f, MatLayout::CHW);
+  Mat hwc(MatShape::make_3d(2, 4, 3), 0.0f, MatLayout::NHWC);
+  Mat chw(MatShape::make_3d(2, 4, 3), 0.0f, MatLayout::NCHW);
   hwc(1, 2, 2) = 1.0f;
   chw(1, 2, 2) = 1.0f;
 
-  REQUIRE(hwc.layout() == MatLayout::HWC);
-  REQUIRE(chw.layout() == MatLayout::CHW);
+  REQUIRE(hwc.layout() == MatLayout::NHWC);
+  REQUIRE(chw.layout() == MatLayout::NCHW);
 
   REQUIRE(hwc == chw);
-  Mat hwc_from_chw = chw.to_layout(MatLayout::HWC);
+  Mat hwc_from_chw = chw.to_layout(MatLayout::NHWC);
   REQUIRE(hwc_from_chw == chw);
-  REQUIRE(hwc_from_chw.layout() == MatLayout::HWC);
+  REQUIRE(hwc_from_chw.layout() == MatLayout::NHWC);
 
   // Test no-op conversion
-  Mat chw_from_chw = chw.to_layout(MatLayout::CHW);
+  Mat chw_from_chw = chw.to_layout(MatLayout::NCHW);
   REQUIRE(chw_from_chw == chw);
-  REQUIRE(chw_from_chw.layout() == MatLayout::CHW);
+  REQUIRE(chw_from_chw.layout() == MatLayout::NCHW);
 }
 
 TEST_CASE("Mat layout access patterns", "[mat]") {
-  Mat hwc(3, 4, 2, 0.0f, MatLayout::HWC);
-  Mat chw(3, 4, 2, 0.0f, MatLayout::CHW);
+  Mat hwc(MatShape::make_3d(3, 4, 2), 0.0f, MatLayout::NHWC);
+  Mat chw(MatShape::make_3d(3, 4, 2), 0.0f, MatLayout::NCHW);
 
   for (size_t r = 0; r < 3; ++r) {
     for (size_t c = 0; c < 4; ++c) {
@@ -173,7 +173,7 @@ TEST_CASE("Mat layout access patterns", "[mat]") {
 }
 
 TEST_CASE("Mat proto serialization and deserialization", "[mat][proto]") {
-  Mat original(2, 3, 2, 0.0f);
+  Mat original(MatShape::make_3d(2, 3, 2), 0.0f);
   original(0, 0, 0) = 1.5f;
   original(0, 1, 1) = 2.7f;
   original(1, 2, 0) = 3.14f;
