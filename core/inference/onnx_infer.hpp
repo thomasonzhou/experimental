@@ -40,6 +40,31 @@ class CUDAModel {
     return output;
   };
 
+  std::vector<Ort::Value> infer_raw(
+      const core::Mat& input,
+      std::reference_wrapper<std::vector<Ort::IoBinding>> bindings);
+
+  // Create a reusable binding for streaming inference
+  std::unique_ptr<Ort::IoBinding> create_streaming_binding(
+      const core::Mat& template_input,
+      const std::vector<std::string>& output_names = {});
+
+  // For true streaming, you'd want a helper class
+  class StreamingInference {
+   public:
+    StreamingInference(CUDAModel& model, const core::Mat& template_input,
+                       const std::vector<std::string>& output_names = {});
+
+    std::vector<Ort::Value> infer(const core::Mat& input);
+
+   private:
+    CUDAModel& model_;
+    std::unique_ptr<Ort::IoBinding> binding_;
+    std::unique_ptr<void, CudaMemoryDeleter> d_input_;
+    std::vector<int64_t> input_shape_;
+    size_t input_size_;
+  };
+
   std::string model_path() const noexcept { return model_path_; }
 
  private:

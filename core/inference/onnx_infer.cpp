@@ -47,8 +47,8 @@ void CUDAModel::infer_inplace(const core::Mat& const_input, core::Mat& output) {
 
   const core::Mat* in_ptr = std::addressof(const_input);
   std::optional<core::Mat> chw_input;
-  if (const_input.layout() == core::MatLayout::HWC) {
-    chw_input.emplace(const_input.to_layout(core::MatLayout::CHW));
+  if (const_input.layout() == core::MatLayout::NHWC) {
+    chw_input.emplace(const_input.to_layout(core::MatLayout::NCHW));
     in_ptr = std::addressof(chw_input.value());
   }
   const core::Mat& input = *in_ptr;
@@ -72,15 +72,21 @@ void CUDAModel::infer_inplace(const core::Mat& const_input, core::Mat& output) {
 
   binding.BindOutput(out0.get(), info_cuda_);
 
-  Ort::RunOptions run_opt;
-  LOG(INFO) << "Running model...";
-  session_.Run(run_opt, binding);
-  LOG(INFO) << "Model run completed";
+  // Ort::RunOptions run_opt;
+  // LOG(INFO) << "Running model...";
+  // session_.Run(run_opt, binding);
+  // LOG(INFO) << "Model run completed";
 
-  auto out_vals = binding.GetOutputValues();
-  if (out_vals.size() != 1 || !out_vals[0].IsTensor()) {
-    LOG(FATAL) << "Unexpected number/type of outputs.";
-  }
+  // auto out_vals = binding.GetOutputValues();
+
+  // ******
+
+  std::vector<Ort::IoBinding> bindings_vec;
+  bindings_vec.push_back(std::move(binding));
+  /***** */
+  auto out_vals = infer_raw(input, std::ref(bindings_vec));
+  /***** */
+
   if (out_vals[0].GetTensorTypeAndShapeInfo().GetElementType() !=
       ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT) {
     LOG(FATAL) << "Unexpected output tensor type.";
@@ -100,4 +106,45 @@ void CUDAModel::infer_inplace(const core::Mat& const_input, core::Mat& output) {
                         cudaMemcpyDeviceToHost));
 }
 
-}  // namespace core::inference::onnx
+// assume all preprocessing is done
+std::vector<Ort::Value> CUDAModel::infer_raw(
+    const core::Mat& input,
+    std::reference_wrapper<std::vector<Ort::IoBinding>> binding) {
+  auto in0 = session_.GetInputNameAllocated(0, cpu_alloc_);
+
+  std::vector<int64_t> input_shape{
+      (int64_t)input.batch_size(), (int64_t)input.channels(),
+      (int64_t)input.rows(), (int64_t)input.cols()};
+
+  auto d_in = std::unique_ptr<void, CudaMemoryDeleter>(
+      cuda_alloc_.Alloc(input.size() * sizeof(float)),
+      CudaMemoryDeleter(&cuda_alloc_));
+  CUDA_CHECK(cudaMemcpy(d_in.get(), input.data(), sizeof(float) * input.size(),
+                        cudaMemcpyHostToDevice));
+
+  Ort::Value in_tensor = Ort::Value::CreateTensor<float>(
+      info_cuda_, static_cast<float*>(d_in.get()), input.size(),
+      input_shape.data(), input_shape.size());
+
+  Ort::IoBinding binding(session_);
+  binding.BindInput(in0.get(), in_tensor);
+
+  // Bind all outputs to CUDA memory
+  size_t num_outputs = session_.GetOutputCount();
+  for (size_t i = 0; i < num_outputs; ++i) {
+    auto out_name = session_.GetOutputNameAllocated(i, cpu_alloc_);
+    binding.BindOutput(out_name.get(), info_cuda_);
+  }
+
+  Ort::RunOptions run_opt;
+  LOG(INFO) << "Running feature matching model...";
+  session_.Run(run_opt, binding);
+  LOG(INFO) << "Feature matching model run completed";
+
+  auto out_vals = binding.GetOutputValues();
+  LOG(INFO) << "Got " << out_vals.size() << " outputs from model";
+
+  return out_vals;
+}
+
+};  // namespace core::inference::onnx

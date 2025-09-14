@@ -83,13 +83,6 @@ class Mat {
   [[nodiscard]] constexpr size_t ndim() const noexcept { return shape_.ndim(); }
   [[nodiscard]] constexpr size_t size() const noexcept { return shape_.size(); }
   [[nodiscard]] constexpr MatShape shape() const noexcept { return shape_; }
-  [[nodiscard]] std::vector<size_t> shape_vec() const noexcept {
-    if (ndim() == 4) {
-      return {shape_.batch_size, shape_.channels, shape_.rows, shape_.cols};
-    } else {
-      return {shape_.rows, shape_.cols, shape_.channels};
-    }
-  }
   [[nodiscard]] constexpr MatLayout layout() const noexcept { return layout_; }
 
   [[nodiscard]] float* data() noexcept { return data_ptr_.get(); }

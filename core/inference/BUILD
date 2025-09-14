@@ -14,3 +14,20 @@ cc_library(
     ],
     visibility = ["//visibility:public"]
 )
+
+cc_library(
+    name = "feature_matcher",
+    srcs = [
+        "feature_matcher.cpp",
+    ],
+    hdrs = [
+        "feature_matcher.hpp",
+    ],
+    deps = [
+        ":onnx_infer",
+        "@rules_cuda//cuda:runtime",
+        "@abseil-cpp//absl/log:log",
+        "//core/mat:mat",
+    ],
+    visibility = ["//visibility:public"]
+)
