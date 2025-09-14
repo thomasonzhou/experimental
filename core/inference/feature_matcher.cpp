@@ -136,15 +136,6 @@ FeatureMatchingResult FeatureMatcher::parse_outputs(
     all_right_keypoints[i] = {x_right, y_right};
   }
 
-  // Debug: Log first few keypoints with proper int64 interpretation
-  LOG(INFO) << "First few left keypoints: (" << all_left_keypoints[0].x << ","
-            << all_left_keypoints[0].y << "), (" << all_left_keypoints[1].x
-            << "," << all_left_keypoints[1].y << "), ("
-            << all_left_keypoints[2].x << "," << all_left_keypoints[2].y << ")";
-  LOG(INFO) << "First few right keypoints: (" << all_right_keypoints[0].x << ","
-            << all_right_keypoints[0].y << "), (" << all_right_keypoints[1].x
-            << "," << all_right_keypoints[1].y << ")";
-
   // Output 1: Matches (M, 3) - int64 tensor with [batch_idx, left_kpt_idx,
   // right_kpt_idx]
   const auto& matches_tensor = outputs[1];

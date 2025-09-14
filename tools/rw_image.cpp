@@ -12,15 +12,15 @@
 
 #include "absl/log/log.h"
 #include "core/inference/onnx_infer.hpp"
+#include "core/io/load_bazel_runfile.hpp"
 #include "core/mat/mat_io.hpp"
 
 DEFINE_string(in_image_path, "", "Path to the input image file");
 DEFINE_string(out_image_path, "", "Path to save the output image file");
-DEFINE_string(model_path,
-              "/home/thchzh/src/experimental/weights/moge-2-vits-normal.onnx",
+DEFINE_string(model_path, "model_weights/moge-2-vits-normal.onnx",
               "Path to the ONNX model file");
 
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   if (FLAGS_in_image_path.empty() && FLAGS_out_image_path.empty()) {
     std::cerr << "No image paths provided. Use --in_image_path or "
@@ -42,7 +42,9 @@ int main(int argc, char* argv[]) {
     LOG(INFO) << "Loaded input image";
   }
 
-  core::inference::onnx::CUDAModel model(FLAGS_model_path);
+  std::string runfile_path =
+      core::io::find_runfile_path(argv[0], FLAGS_model_path);
+  core::inference::onnx::CUDAModel model(runfile_path);
 
   core::Mat out_mat;
   if (!FLAGS_in_image_path.empty()) {

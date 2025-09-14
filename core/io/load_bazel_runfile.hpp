@@ -17,6 +17,11 @@ std::string find_runfile_path(const std::string& argv0,
   }
   std::string runfile_path = runfiles->Rlocation(file_path);
   LOG(INFO) << "Loading model from: " << runfile_path;
+
+  if (runfile_path.empty()) {
+    LOG(FATAL) << "Runfile not found: " << file_path;
+    return "";
+  }
   return runfile_path;
 }
 }  // namespace core::io
