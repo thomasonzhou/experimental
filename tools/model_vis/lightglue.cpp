@@ -7,6 +7,7 @@
 #include <stdexcept>
 
 #include "core/inference/feature_matcher.hpp"
+#include "core/io/load_bazel_runfile.hpp"
 #include "core/video/v4l2/v4l2_camera.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -16,7 +17,7 @@ static void glfw_error_callback(int error, const char* description) {
   fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
-int main(int, char**) {
+int main(int, char** argv) {
   glfwSetErrorCallback(glfw_error_callback);
   if (!glfwInit()) return 1;
 
@@ -112,10 +113,11 @@ int main(int, char**) {
   core::inference::onnx::FeatureMatchingResult last_matches;
   bool matches_initialized = false;
 
+  std::string feature_matcher_model_path = core::io::find_runfile_path(
+      argv, "model_weights/superpoint-lightglue.onnx");
   try {
     feature_matcher = std::make_unique<core::inference::onnx::FeatureMatcher>(
-        "/home/thchzh/src/experimental/weights/"
-        "superpoint_lightglue_pipeline.onnx");
+        feature_matcher_model_path);
   } catch (const std::exception& e) {
     fprintf(stderr, "Feature matcher init failed: %s\n", e.what());
   }

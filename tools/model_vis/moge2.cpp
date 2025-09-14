@@ -2,10 +2,13 @@
 #include <stdio.h>
 
 #include <chrono>
+#include <filesystem>
 #include <memory>
 #include <stdexcept>
 
+#include "cc/runfiles/runfiles.h"
 #include "core/inference/onnx_infer.hpp"
+#include "core/io/load_bazel_runfile.hpp"
 #include "core/video/v4l2/v4l2_camera.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -15,7 +18,7 @@ static void glfw_error_callback(int error, const char* description) {
   fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
-int main(int, char**) {
+int main(int argc, char** argv) {
   glfwSetErrorCallback(glfw_error_callback);
   if (!glfwInit()) return 1;
 
@@ -80,36 +83,10 @@ int main(int, char**) {
     fprintf(stderr, "Camera init failed: %s\n", e.what());
   }
 
-  //   // realsense 405
-  //   std::unique_ptr<core::video::v4l2::Camera> realsense_camera;
-  //   unsigned int realsense_tex = 1;
-  //   int realsense_w = 0, realsense_h = 0;
+  std::string model_path = core::io::find_runfile_path(
+      argv, "model_weights/moge-2-vits-normal.onnx");
 
-  //   try {
-  //     core::video::v4l2::Config config;
-  //     config.device = "/dev/video8";
-  //     config.width = 640;
-  //     config.height = 480;
-  //     config.fps = 30;
-  //     config.pixfmt = V4L2_PIX_FMT_YUYV;
-
-  //     realsense_camera = std::make_unique<core::video::v4l2::Camera>(config);
-  //     realsense_w = realsense_camera->width();
-  //     realsense_h = realsense_camera->height();
-
-  //     glGenTextures(1, &realsense_tex);
-  //     glBindTexture(GL_TEXTURE_2D, realsense_tex);
-  //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  //     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, realsense_w, realsense_h, 0,
-  //     GL_RGB,
-  //                  GL_FLOAT, nullptr);
-  //   } catch (const std::exception& e) {
-  //     fprintf(stderr, "Camera init failed: %s\n", e.what());
-  //   }
-
-  core::inference::onnx::CUDAModel model(
-      "/home/thchzh/src/experimental/weights/moge-2-vits-normal.onnx");
+  core::inference::onnx::CUDAModel model(model_path);
   core::Mat model_output;
   bool model_output_initialized = false;
   unsigned int model_tex = 2;
@@ -180,35 +157,6 @@ int main(int, char**) {
       ImGui::Separator();
       ImGui::SliderInt("Video FPS", &video_fps, 1, 20, "%d");
       ImGui::End();
-
-      //   // realsense 405
-
-      //   std::optional<std::reference_wrapper<const core::Mat>> realsense_rgb;
-
-      //   // Always grab the latest frame for potential use
-      //   if (auto rgb_opt = realsense_camera->try_grab_rgb()) {
-      //     realsense_rgb = rgb_opt.value();
-
-      //     // Update video texture only at the specified video frame rate
-      //     if (should_update_video2) {
-      //       glBindTexture(GL_TEXTURE_2D, realsense_tex);
-      //       glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, realsense_w, realsense_h,
-      //                       GL_RGB, GL_FLOAT, realsense_rgb->get().data());
-      //       last_video1_time = current_time;
-      //     }
-      //   }
-
-      //   ImGui::Begin("Realsense Camera Feed");
-      //   ImGui::Text("Resolution: %d x %d", realsense_w, realsense_h);
-
-      //   if (realsense_tex != 0) {
-      //     ImGui::Image((ImTextureID)(intptr_t)realsense_tex,
-      //                  ImVec2((float)realsense_w, (float)realsense_h));
-      //   }
-      //   ImGui::Text("%.1f FPS", io.Framerate);
-      //   ImGui::Separator();
-      //   ImGui::SliderInt("Video FPS", &video2_fps, 1, 20, "%d");
-      //   ImGui::End();
 
       ImGui::Begin("Camera Inference");
 

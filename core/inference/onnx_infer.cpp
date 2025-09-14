@@ -129,6 +129,25 @@ std::vector<Ort::Value> CUDAModel::infer_raw(
   Ort::IoBinding binding(session_);
   binding.BindInput(in0.get(), in_tensor);
 
+  size_t num_inputs = session_.GetInputCount();
+  if (num_inputs > 1) {
+    auto in1 = session_.GetInputNameAllocated(1, cpu_alloc_);
+
+    const int64_t num_tokens_value = 1800;
+    std::vector<int64_t> num_tokens_shape{};  // empty shape for scalar
+
+    auto d_num_tokens = std::unique_ptr<void, CudaMemoryDeleter>(
+        cuda_alloc_.Alloc(sizeof(int64_t)), CudaMemoryDeleter(&cuda_alloc_));
+    CUDA_CHECK(cudaMemcpy(d_num_tokens.get(), &num_tokens_value,
+                          sizeof(int64_t), cudaMemcpyHostToDevice));
+
+    Ort::Value num_tokens_tensor = Ort::Value::CreateTensor<int64_t>(
+        info_cuda_, static_cast<int64_t*>(d_num_tokens.get()), 1,
+        num_tokens_shape.data(), num_tokens_shape.size());
+
+    binding.BindInput(in1.get(), num_tokens_tensor);
+  }
+
   // Bind all outputs to CUDA memory
   size_t num_outputs = session_.GetOutputCount();
   for (size_t i = 0; i < num_outputs; ++i) {

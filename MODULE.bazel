@@ -9,6 +9,8 @@ bazel_dep(name = "rules_cc", version = "0.2.0")
 bazel_dep(name = "rules_cuda", version = "0.2.5")
 bazel_dep(name = "stb", version = "0.0.0-20241109-5c20573")
 
+model_weights = use_extension("//bazel:model_weights.bzl", "model_weights")
+use_repo(model_weights, "model_weights")
 
 onnxruntime_ext = use_extension("//bazel:extensions.bzl", "onnxruntime")
 use_repo(onnxruntime_ext, "onnxruntime_gpu")
