@@ -5,10 +5,11 @@
 #include "rules_cc/cc/runfiles/runfiles.h"
 
 namespace core::io {
-std::string find_runfile_path(char** argv, const std::string& file_path) {
+std::string find_runfile_path(const std::string& argv0,
+                              const std::string& file_path) {
   std::string error;
   std::unique_ptr<rules_cc::cc::runfiles::Runfiles> runfiles(
-      rules_cc::cc::runfiles::Runfiles::Create(argv[0], &error));
+      rules_cc::cc::runfiles::Runfiles::Create(argv0, &error));
 
   if (runfiles == nullptr) {
     LOG(FATAL) << "Error initializing runfiles: " << error;

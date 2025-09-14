@@ -26,6 +26,7 @@ cc_binary(
         "//core/video/v4l2:v4l2_camera",
         "//core/inference:feature_matcher",
         "//core/io:load_bazel_runfile",
+        "@abseil-cpp//absl/log:log",
     ],
     data = [
         "@model_weights//:superpoint_lightglue",

@@ -6,6 +6,7 @@
 #include <memory>
 #include <stdexcept>
 
+#include "absl/log/log.h"
 #include "core/inference/feature_matcher.hpp"
 #include "core/io/load_bazel_runfile.hpp"
 #include "core/video/v4l2/v4l2_camera.hpp"
@@ -114,12 +115,12 @@ int main(int, char** argv) {
   bool matches_initialized = false;
 
   std::string feature_matcher_model_path = core::io::find_runfile_path(
-      argv, "model_weights/superpoint-lightglue.onnx");
+      argv[0], "model_weights/superpoint-lightglue.onnx");
   try {
     feature_matcher = std::make_unique<core::inference::onnx::FeatureMatcher>(
         feature_matcher_model_path);
   } catch (const std::exception& e) {
-    fprintf(stderr, "Feature matcher init failed: %s\n", e.what());
+    LOG(FATAL) << "Feature matcher init failed: " << e.what();
   }
 
   int video_fps = 30;

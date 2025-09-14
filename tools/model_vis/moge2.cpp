@@ -80,11 +80,11 @@ int main(int argc, char** argv) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, cam_w, cam_h, 0, GL_RGB, GL_FLOAT,
                  nullptr);
   } catch (const std::exception& e) {
-    fprintf(stderr, "Camera init failed: %s\n", e.what());
+    LOG(FATAL) << "Camera init failed: " << e.what();
   }
 
   std::string model_path = core::io::find_runfile_path(
-      argv, "model_weights/moge-2-vits-normal.onnx");
+      argv[0], "model_weights/moge-2-vits-normal.onnx");
 
   core::inference::onnx::CUDAModel model(model_path);
   core::Mat model_output;
