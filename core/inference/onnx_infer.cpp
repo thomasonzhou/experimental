@@ -7,7 +7,7 @@ namespace core::inference::onnx {
 CUDAModel::CUDAModel(const std::string& model_path,
                      std::optional<int> device_id)
     : model_path_(model_path),
-      device_id_(device_id.value_or(0)),
+      device_id_(device_id.value_or(kDefaultCUDADeviceID)),
       env_(ORT_LOGGING_LEVEL_WARNING, "CUDAModel"),
       api_(Ort::GetApi()),
       session_(nullptr),
@@ -26,7 +26,7 @@ CUDAModel::CUDAModel(const std::string& model_path,
       cuda_opts_raii(cuda_options, api_.ReleaseCUDAProviderOptions);
 
   std::vector<const char*> keys{"device_id"};
-  std::vector<const char*> vals{"0"};
+  std::vector<const char*> vals{std::to_string(device_id_).c_str()};
   Ort::ThrowOnError(api_.UpdateCUDAProviderOptions(cuda_options, keys.data(),
                                                    vals.data(), keys.size()));
   Ort::ThrowOnError(api_.SessionOptionsAppendExecutionProvider_CUDA_V2(

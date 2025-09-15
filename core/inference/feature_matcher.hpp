@@ -35,9 +35,6 @@ class FeatureMatcher {
  private:
   std::unique_ptr<CUDAModel> model_;
 
-  // frontend processing, e.g. greyscale -> superpoint -> features
-  core::Mat preprocess_image(const core::Mat& rgb_image);
-
   FeatureMatchingResult parse_outputs(const std::vector<Ort::Value>& outputs);
 };
 

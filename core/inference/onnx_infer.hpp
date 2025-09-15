@@ -21,6 +21,8 @@
 
 namespace core::inference::onnx {
 
+constexpr int kDefaultCUDADeviceID = 0;
+
 struct CudaMemoryDeleter {
   explicit CudaMemoryDeleter(Ort::Allocator* alloc) { alloc_ = alloc; }
 

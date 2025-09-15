@@ -28,7 +28,7 @@ cc_library(
         "@rules_cuda//cuda:runtime",
         "@abseil-cpp//absl/log:log",
         "//core/mat:mat",
-        "//core/video:color_conversion",
+        "//core/mat/utils:color_conversion",
     ],
     visibility = ["//visibility:public"]
 )

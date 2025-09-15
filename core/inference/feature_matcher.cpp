@@ -6,7 +6,7 @@
 #include <memory>
 
 #include "absl/log/log.h"
-#include "core/video/color_conversion.hpp"
+#include "core/mat/utils/color_conversion.hpp"
 
 #ifndef CUDA_CHECK
 #define CUDA_CHECK(expr)                                           \
