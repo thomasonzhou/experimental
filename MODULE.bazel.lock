@@ -189,10 +189,26 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
-    "//bazel:extensions.bzl%onnxruntime": {
+    "//bazel:model_weights.bzl%model_weights": {
+      "general": {
+        "bzlTransitiveDigest": "3HkYlQCwacevhy8u3TViVN1re/2emt6BN4qVQA9obRY=",
+        "usagesDigest": "hNPnKYKVHKzskOmwE6g2llC7koHbOkqAg1FaviZks80=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "model_weights": {
+            "repoRuleId": "@@//bazel:model_weights.bzl%_model_weights_repo",
+            "attributes": {}
+          }
+        },
+        "recordedRepoMappingEntries": []
+      }
+    },
+    "//bazel:onnxruntime_gpu.bzl%onnxruntime": {
       "general": {
         "bzlTransitiveDigest": "NUVavqx+3NWG4qX6vbY8L8qILoUOhJi+1reGB6RjorU=",
-        "usagesDigest": "WyyixNE07QOp0AqQASj1im9tzQRnHnML5jv7K16xfEk=",
+        "usagesDigest": "ixO8F1E8nsnL+/dE/ttht18/tXlMdBO/KdIkMpeVGZc=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -214,22 +230,6 @@
             "bazel_tools"
           ]
         ]
-      }
-    },
-    "//bazel:model_weights.bzl%model_weights": {
-      "general": {
-        "bzlTransitiveDigest": "3HkYlQCwacevhy8u3TViVN1re/2emt6BN4qVQA9obRY=",
-        "usagesDigest": "hNPnKYKVHKzskOmwE6g2llC7koHbOkqAg1FaviZks80=",
-        "recordedFileInputs": {},
-        "recordedDirentsInputs": {},
-        "envVariables": {},
-        "generatedRepoSpecs": {
-          "model_weights": {
-            "repoRuleId": "@@//bazel:model_weights.bzl%_model_weights_repo",
-            "attributes": {}
-          }
-        },
-        "recordedRepoMappingEntries": []
       }
     },
     "@@apple_support+//crosstool:setup.bzl%apple_cc_configure_extension": {

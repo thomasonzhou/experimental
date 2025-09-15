@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "absl/log/log.h"
+#include "core/video/color_conversion.hpp"
 
 #ifndef CUDA_CHECK
 #define CUDA_CHECK(expr)                                           \
@@ -24,40 +25,10 @@ FeatureMatcher::FeatureMatcher(const std::string& model_path,
                                std::optional<int> device_id)
     : model_(std::make_unique<CUDAModel>(model_path, device_id)) {}
 
-core::Mat FeatureMatcher::preprocess_image(const core::Mat& rgb_image) {
-  // Convert RGB to grayscale (simple weighted average)
-  // Y = 0.299*R + 0.587*G + 0.114*B
-
-  if (rgb_image.channels() != 3) {
-    LOG(FATAL) << "Expected RGB image with 3 channels, got "
-               << rgb_image.channels();
-  }
-
-  core::Mat gray(core::MatShape::make_3d(rgb_image.rows(), rgb_image.cols(), 1),
-                 std::nullopt, core::MatLayout::NHWC);
-
-  const float* rgb_data = rgb_image.data();
-  float* gray_data = gray.data();
-
-  size_t pixel_count = rgb_image.rows() * rgb_image.cols();
-
-  for (size_t i = 0; i < pixel_count; ++i) {
-    float r = rgb_data[i * 3 + 0];
-    float g = rgb_data[i * 3 + 1];
-    float b = rgb_data[i * 3 + 2];
-
-    // Convert to grayscale and normalize to [0, 1] if needed
-    gray_data[i] = 0.299f * r + 0.587f * g + 0.114f * b;
-  }
-
-  return gray;
-}
-
 FeatureMatchingResult FeatureMatcher::match_features(
     const core::Mat& left_image, const core::Mat& right_image) {
-  // Preprocess images to grayscale
-  core::Mat left_gray = preprocess_image(left_image);
-  core::Mat right_gray = preprocess_image(right_image);
+  core::Mat left_gray = core::video::convert_rgb_to_grayscale(left_image);
+  core::Mat right_gray = core::video::convert_rgb_to_grayscale(right_image);
 
   // Create interleaved batch: [left, right]
   // Input shape: (2, 1, H, W) using 4D constructor
@@ -67,16 +38,9 @@ FeatureMatchingResult FeatureMatcher::match_features(
   core::Mat batch_input(core::MatShape::make_4d(2, h, w, 1), std::nullopt,
                         core::MatLayout::NCHW);
 
-  // Copy left image (batch 0, channel 0)
   for (size_t r = 0; r < h; ++r) {
     for (size_t c = 0; c < w; ++c) {
       batch_input(0, 0, r, c) = left_gray(r, c, 0);
-    }
-  }
-
-  // Copy right image (batch 1, channel 0)
-  for (size_t r = 0; r < h; ++r) {
-    for (size_t c = 0; c < w; ++c) {
       batch_input(1, 0, r, c) = right_gray(r, c, 0);
     }
   }
@@ -111,11 +75,10 @@ FeatureMatchingResult FeatureMatcher::parse_outputs(
       cudaMemcpy(kp_data.data(), keypoints_tensor.GetTensorData<int64_t>(),
                  kp_data.size() * sizeof(int64_t), cudaMemcpyDeviceToHost));
 
-  // Parse ALL keypoints first (including zeros) - we'll filter based on matches
-  // later
+  // some keypoints may be zero (no keypoint)
   size_t num_keypoints_per_image = kp_shape[1];  // 1024
 
-  // Store ALL 1024 keypoints from both images (even zero ones)
+  // store alll 1024 keypoints from both images (even zero ones)
   std::vector<Keypoint> all_left_keypoints(num_keypoints_per_image);
   std::vector<Keypoint> all_right_keypoints(num_keypoints_per_image);
 
@@ -187,15 +150,6 @@ FeatureMatchingResult FeatureMatcher::parse_outputs(
           int final_left_idx = result.left_keypoints.size() - 1;
           int final_right_idx = result.right_keypoints.size() - 1;
           result.matches.push_back({final_left_idx, final_right_idx, score});
-
-          // Debug: Log first few matches with actual coordinates
-          if (result.matches.size() <= 5) {
-            LOG(INFO) << "Match " << result.matches.size() << ": left("
-                      << left_kp.x << "," << left_kp.y << ") <-> right("
-                      << right_kp.x << "," << right_kp.y << ") score=" << score
-                      << " (indices: " << left_idx << " -> " << right_idx
-                      << ")";
-          }
         }
       }
     }

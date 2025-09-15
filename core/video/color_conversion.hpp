@@ -39,4 +39,6 @@ void convert_yuyv_to_rgb_f32_inplace(const std::uint8_t* src, int w, int h,
 core::Mat convert_yuyv_to_rgb_f32(const std::uint8_t* src, int w, int h,
                                   const ColorSpaceGains& cs);
 
+core::Mat convert_rgb_to_grayscale(const core::Mat& input);
+
 };  // namespace core::video

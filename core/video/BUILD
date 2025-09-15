@@ -4,6 +4,7 @@ cc_library(
     hdrs = ["color_conversion.hpp"],
     deps = [
         "//core/mat:mat",
+        "@abseil-cpp//absl/log:log",
     ],
     visibility = ["//visibility:public"]
 )

@@ -12,5 +12,5 @@ bazel_dep(name = "stb", version = "0.0.0-20241109-5c20573")
 model_weights = use_extension("//bazel:model_weights.bzl", "model_weights")
 use_repo(model_weights, "model_weights")
 
-onnxruntime_ext = use_extension("//bazel:extensions.bzl", "onnxruntime")
+onnxruntime_ext = use_extension("//bazel:onnxruntime_gpu.bzl", "onnxruntime")
 use_repo(onnxruntime_ext, "onnxruntime_gpu")
