@@ -45,6 +45,7 @@ void CUDAModel::infer_inplace(const core::Mat& const_input, core::Mat& output) {
   auto in0 = session_.GetInputNameAllocated(0, cpu_alloc_);
   auto out0 = session_.GetOutputNameAllocated(0, cpu_alloc_);
 
+  // TODO: move to preprocessing
   const core::Mat* in_ptr = std::addressof(const_input);
   std::optional<core::Mat> chw_input;
   if (const_input.layout() == core::MatLayout::NHWC) {
