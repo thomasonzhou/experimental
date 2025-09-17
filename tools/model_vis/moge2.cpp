@@ -102,10 +102,8 @@ int main(int argc, char** argv) {
   glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
 
   int video_fps = 30;
-  int video2_fps = 30;
   int inference_fps = 5;
   auto last_video1_time = std::chrono::steady_clock::now();
-  auto last_video2_time = std::chrono::steady_clock::now();
   auto last_inference_time = std::chrono::steady_clock::now();
 
   // Main loop
@@ -125,8 +123,6 @@ int main(int argc, char** argv) {
 
       bool should_update_video1 =
           (current_time - last_video1_time) >= video_interval;
-      bool should_update_video2 =
-          (current_time - last_video2_time) >= video_interval;
       bool should_run_inference =
           (current_time - last_inference_time) >= inference_interval;
 

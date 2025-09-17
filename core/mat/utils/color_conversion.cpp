@@ -57,8 +57,6 @@ core::Mat convert_rgb_to_grayscale(const core::Mat& rgb_image) {
   core::Mat gray(core::MatShape::make_3d(rgb_image.rows(), rgb_image.cols(), 1),
                  std::nullopt, core::MatLayout::NHWC);
 
-  const size_t pixel_count = rgb_image.rows() * rgb_image.cols();
-
   for (size_t r = 0; r < rgb_image.rows(); ++r) {
     for (size_t c = 0; c < rgb_image.cols(); ++c) {
       const float r_val = rgb_image(r, c, 0);

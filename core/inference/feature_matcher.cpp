@@ -124,9 +124,9 @@ FeatureMatchingResult FeatureMatcher::parse_outputs(
 
     // Parse matches - only add keypoints that are actually matched
     for (size_t i = 0; i < matches_shape[0]; ++i) {
-      int batch_idx = static_cast<int>(matches_data[i * 3 + 0]);
-      int left_idx = static_cast<int>(matches_data[i * 3 + 1]);
-      int right_idx = static_cast<int>(matches_data[i * 3 + 2]);
+      int batch_idx = matches_data[i * 3 + 0];
+      int left_idx = matches_data[i * 3 + 1];
+      int right_idx = matches_data[i * 3 + 2];
       float score = scores_data[i];
 
       // Only consider matches for batch 0 and valid indices
