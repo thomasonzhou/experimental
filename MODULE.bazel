@@ -1,14 +1,35 @@
 # modules from https://registry.bazel.build/
 # include a target using @module_name//:target_name
-bazel_dep(name = "abseil-cpp", version = "20250814.0")
-bazel_dep(name = "catch2", version = "3.8.1")
-bazel_dep(name = "gflags", version = "2.2.2")
-bazel_dep(name = "glfw", version = "3.3.9")
-bazel_dep(name = "protobuf", version = "31.1")
+bazel_dep(name = "abseil-cpp", version = "20250814.0") # extended C++ stdlib
+bazel_dep(name = "catch2", version = "3.8.1") # unit testing
+bazel_dep(name = "gflags", version = "2.2.2") # cli flags
+bazel_dep(name = "glfw", version = "3.3.9") # opengl library for GUI
+bazel_dep(name = "protobuf", version = "31.1") # message passing
 bazel_dep(name = "rules_cc", version = "0.2.0")
-bazel_dep(name = "rules_cuda", version = "0.2.5")
-bazel_dep(name = "stb", version = "0.0.0-20241109-5c20573")
+bazel_dep(name = "rules_cuda", version = "0.2.5") 
+bazel_dep(name = "stb", version = "0.0.0-20241109-5c20573") # image opening
 
+cuda = use_extension("@rules_cuda//cuda:extensions.bzl", "toolchain")
+
+# for CUDA 13.02
+git_override(
+    module_name = "rules_cuda",
+    remote      = "https://github.com/bazel-contrib/rules_cuda.git",
+    commit      = "796e9d12b0ba054b755686d09c5710e53cd4e7ae",
+)
+cuda.redist_json(
+    name = "cuda_redist",
+    urls = [
+        "https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.0.2.json",
+    ],
+    sha256 = "fce66717a81c510ffeb89ecc3e79849ab34af3b80139f750876d9033e31d71c2",
+    version = "13.0.2",
+)
+cuda.toolkit(
+    name = "cuda",
+    version = "13.0.2",
+)
+use_repo(cuda, "cuda")
 
 onnxruntime_ext = use_extension("//bazel:extensions.bzl", "onnxruntime")
 use_repo(onnxruntime_ext, "onnxruntime_gpu")
